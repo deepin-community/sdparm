@@ -2,8 +2,10 @@ Source: sdparm
 Section: admin
 Priority: optional
 Maintainer: Tomas Fasth <tomfa@debian.org>
-Build-Depends: cdbs (>= 0.4.15), debhelper (>= 10), autotools-dev
-Standards-Version: 4.2.1
+Uploaders: Alex Myczko <tar@debian.org>
+Build-Depends: debhelper-compat (= 13)
+Homepage: https://sg.danny.cz/sg/sdparm.html
+Standards-Version: 4.7.0
 
 Package: sdparm
 Architecture: any

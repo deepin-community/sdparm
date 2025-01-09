@@ -1,13 +1,13 @@
-.TH SDPARM "8" "February 2016" "sdparm\-1.10" SDPARM
+.TH SDPARM "8" "April 2021" "sdparm\-1.12" SDPARM
 .SH NAME
 sdparm \- access SCSI modes pages; read VPD pages; send simple SCSI commands.
 .SH SYNOPSIS
 .B sdparm
-[\fI\-\-all\fR] [\fI\-\-dbd\fR] [\fI\-\-flexible\fR] [\fI\-\-get=STR\fR]
-[\fI\-\-hex\fR] [\fI\-\-long\fR] [\fI\-\-num\-desc\fR]
-[\fI\-\-page=PG[,SPG]\fR] [\fI\-\-quiet\fR] [\fI\-\-readonly\fR]
-[\fI\-\-six\fR] [\fI\-\-transport=TN\fR] [\fI\-\-vendor=VN\fR]
-[\fI\-\-verbose\fR] \fIDEVICE\fR [\fIDEVICE\fR...]
+[\fI\-\-all\fR] [\fI\-\-dbd\fR] [\fI\-\-examine\fR] [\fI\-\-flexible\fR]
+[\fI\-\-get=STR\fR] [\fI\-\-hex\fR] [\fI\-\-long\fR] [\fI\-\-num\-desc\fR]
+[\fI\-\-out\-mask=OM\fR] [\fI\-\-page=PG[,SPG]\fR] [\fI\-\-quiet\fR]
+[\fI\-\-readonly\fR] [\fI\-\-six\fR] [\fI\-\-transport=TN\fR]
+[\fI\-\-vendor=VN\fR] [\fI\-\-verbose\fR] \fIDEVICE\fR [\fIDEVICE\fR...]
 .PP
 .B sdparm
 [\fI\-\-clear=STR\fR] [\fI\-\-defaults\fR] [\fI\-\-dummy\fR]
@@ -17,13 +17,13 @@ sdparm \- access SCSI modes pages; read VPD pages; send simple SCSI commands.
 [\fI\-\-verbose\fR] \fIDEVICE\fR [\fIDEVICE\fR...]
 .PP
 .B sdparm
-\fI\-\-command=CMD\fR [\fI\-\-hex\fR] [\fI\-\-readonly\fR]
+\fI\-\-command=CMD\fR [\fI\-\-hex\fR] [\fI\-\-long\fR] [\fI\-\-readonly\fR]
 [\fI\-\-verbose\fR] \fIDEVICE\fR [\fIDEVICE\fR...]
 .PP
 .B sdparm
-\fI\-\-inquiry\fR [\fI\-\-all\fR] [\fI\-\-flexible\fR] [\fI\-\-hex\fR]
-[\fI\-\-num\-desc\fR] [\fI\-\-page=PG[,SPG]\fR] [\fI\-\-quiet\fR]
-[\fI\-\-readonly\fR] [\fI\-\-transport=TN\fR] [\fI\-\-vendor=VN\fR]
+\fI\-\-inquiry\fR [\fI\-\-all\fR] [\fI\-\-examine\fR] [\fI\-\-flexible\fR]
+[\fI\-\-hex\fR] [\fI\-\-num\-desc\fR] [\fI\-\-page=PG[,SPG]\fR]
+[\fI\-\-quiet\fR] [\fI\-\-readonly\fR] [\fI\-\-transport=TN\fR]
 [\fI\-\-verbose\fR] \fIDEVICE\fR [\fIDEVICE\fR...]
 .PP
 .B sdparm
@@ -34,6 +34,7 @@ sdparm \- access SCSI modes pages; read VPD pages; send simple SCSI commands.
 \fI\-\-inhex=FN\fR [\fI\-\-all\fR] [\fI\-\-flexible\fR] [\fI\-\-hex\fR]
 [\fI\-\-inquiry\fR] [\fI\-\-long\fR] [\fI\-\-pdt=DT\fR] [\fI\-\-raw\fR]
 [\fI\-\-six\fR] [\fI\-\-transport=TN\fR] [\fI\-\-vendor=VN\fR]
+[\fI\-\-verbose\fR]
 .PP
 .B sdparm
 \fI\-\-wscan\fR [\fI\-\-verbose\fR]
@@ -43,51 +44,50 @@ sdparm \- access SCSI modes pages; read VPD pages; send simple SCSI commands.
 .SH DESCRIPTION
 .\" Add any additional description here
 .PP
-This utility fetches and potentially changes SCSI device (e.g.
-disk) mode pages. Inquiry data including Vital Product Data (VPD)
-pages can also be displayed. Commands associated with starting
-and stopping the medium; loading and unloading the medium; and
-other housekeeping function may also be issued by this utility.
+This utility fetches and potentially changes SCSI device (e.g. disk) mode
+pages. Inquiry data including Vital Product Data (VPD) pages can also be
+displayed. Commands associated with starting and stopping the medium; loading
+and unloading the medium; and other housekeeping functions may also be issued
+by this utility.
 .PP
-The first invocation shown in the synopsis is for accessing (reading)
-mode page fields held on the \fIDEVICE\fR. The second form is for
-changing mode page fields held on the \fIDEVICE\fR. The third form is for
-executing some simple SCSI commands. The fourth form (i.e.
-the '\fI\-\-inquiry\fR ... \fIDEVICE\fR' form) is for fetching and decoding
-VPD pages from the given \fIDEVICE\fR. The \fI\-\-enumerate\fR form is for
-listing out mode or VPD field data held by this utility (and if a
-\fIDEVICE\fR is given then it is ignored). The \fI\-\-inhex=FN\fR form
-decodes mode or VPD response data provided in the named file (or from stdin
-if \fIFN\fR is '\-'); that data may either be in hexadecimal or binary. The
-second last form is for Windows only and lists the available storage device
-names; see the OPTIONS entry for \fI\-\-wscan\fR. The final form is to
-provide command line help or the version number (and date).
+The first invocation shown in the synopsis is for accessing (i.e. reading)
+mode page fields held on the \fIDEVICE\fR. The second form is for changing
+mode page fields held on the \fIDEVICE\fR. The third form is for executing
+some simple SCSI commands. The fourth form (i.e.  the '\fI\-\-inquiry\fR ...
+\fIDEVICE\fR' form) is for fetching and decoding VPD pages from the given
+\fIDEVICE\fR. The \fI\-\-enumerate\fR form is for listing out mode or VPD
+field data held by this utility (and if a \fIDEVICE\fR is given then it is
+ignored). The \fI\-\-inhex=FN\fR form decodes mode or VPD response data
+provided in the named file (or from stdin if \fIFN=\-\fR is given); that data
+may either be in hexadecimal or binary. The second last form is for Windows
+only and lists the available storage device names; see the OPTIONS entry for
+\fI\-\-wscan\fR. The final form is to provide command line help or the version
+number (and date) of this utility.
 .PP
-If no options (other than \fIDEVICE\fR) are given then a selection of
-common mode page fields for that device are listed. If the \fI\-\-long\fR
-option is also given then a description of the fields is placed on the
-right of each line. If the \fI\-\-all\fR option is given then all known
-mode page fields for that device are listed. Individual fields can be
-displayed with the \fI\-\-get=STR\fR option (e.g. '\-\-get=WCE' to fetch
-the state of the Writeback Cache Enable field).
+If no options (other than \fIDEVICE\fR) are given then a selection of common
+mode page fields for that device are listed. If the \fI\-\-long\fR option is
+also given then a description of the fields is placed on the right of each
+line. If the \fI\-\-all\fR option is given then all known mode page fields
+for that device are listed. Individual fields can be displayed with the
+\fI\-\-get=STR\fR option (e.g. '\-\-get=WCE' to fetch the state of the
+Writeback Cache Enable field).
 .PP
 This utility completes with an exit status of 0 when successful. For other
 values see the EXIT STATUS section below.
 .PP
 One or more \fIDEVICE\fR arguments can be given. The utility will
-essentially apply the given options to each \fIDEVICE\fR in the list.
-If an error is detected, it is noted and the utility continues.
-Error value 5 (file open or close problem) is treated as lower priority
-when other errors are detected. The exit status is the most recently
-detected error value (excluding error value 5 if other errors have
-been detected). If all actions succeed the exit status is zero.
+essentially apply the given options to each \fIDEVICE\fR in the list. If a
+error is detected, it is noted and the utility continues. Error value 5 (file
+open or close problem) is treated as lower priority when other errors are
+detected. The exit status is the most recently detected error value
+(excluding error value 5 if other errors have been detected). If all actions
+succeed the exit status is zero.
 .PP
-By default this utility shows mode pages that are common to all
-transport protocols. These are termed as "generic" mode pages.
-If there is no match on a generic mode page name or field then
-those pages specific to the SAS transport are checked.
-Transport protocol specific mode pages are selected with
-the \fI\-\-transport=TN\fR option. See the TRANSPORT section below.
+By default this utility shows mode pages that are common to all transport
+protocols. These are termed as "generic" mode pages. If there is no match on
+a generic mode page name or field then those pages specific to the SAS
+transport are checked.  Transport protocol specific mode pages are selected
+with the \fI\-\-transport=TN\fR option. See the TRANSPORT section below.
 Vendor specific mode pages are selected with the \fI\-\-vendor=VN\fR option.
 See the VENDORS section below.
 .PP
@@ -122,6 +122,11 @@ from different pages. When a specific (mode) page number is given with the
 output (irrespective of the setting of this option). For this option's action
 when used with the \fI\-\-enumerate\fR option see the ENUMERATE section below.
 .br
+When used together with the \fI\-\-inquiry\fR option and a \fIDEVICE\fR, the
+Supported VPD Pages VPD page [0x0] is output. When this option is used
+twice (short form: '\-iaa') then all VPD pages (listed in the Supported VPD
+Pages VPD page) are output.
+.br
 By default \fI\-\-inhex=FN\fR will only decode the first mode page found in
 \fIFN\fR. With this option, more mode pages will be decoded if present. When
 \fI\-\-transport=TN\fR or \fI\-\-vendor=VN\fR is also given then if a given
@@ -149,6 +154,12 @@ sets the given mode page to its default values. Requires the
 \fI\-\-page=PG[,SPG]\fR option to be given to specify the mode page. To make
 the default mode page values also the saved mode page values, use the
 \fI\-\-save\fR option as well.
+.br
+when this option is used twice, the current values in all modes pages are
+reverted to their defaults. If the \fI\-\-save\fR option is given as well,
+then the current and saved values in all modes pages are reverted to their
+defaults. This feature uses the RTD bit in the MODE SELECT command which
+was added in draft SPC\-5 revision 11.
 .TP
 \fB\-d\fR, \fB\-\-dummy\fR
 when set inhibits changes being placed in the \fIDEVICE\fR's mode page.
@@ -163,6 +174,23 @@ the \fI\-\-all\fR, \fI\-\-inquiry\fR, \fI\-\-long\fR, \fI\-\-page=PG[,SPG]\fR,
 \fI\-\-transport=TN\fR and \fI\-\-vendor=VN\fR. If \fI\-\-enumerate\fR is
 given without other options then the known (generic) mode pages are listed.
 See the ENUMERATE section below.
+.TP
+\fB\-E\fR, \fB\-\-examine\fR
+for mode pages only those with known field names are probed when the
+\fI\-\-all\fR option is given. For VPD pages only those pages listed in
+"Supported VPD pages page" are decoded. In both cases some pages may be
+missed. With this option (i.e. \fI\-\-examine\fR) all mode and VPD pages can
+be probed.
+.br
+For mode pages, this option will probe all mode pages from page number 0x0 to
+0x3e. To probe mode subpages give a mode page number with \fI\-\-page=PG\fR
+and then all subpages (from 0x0 to 0xfe) are probed.
+.br
+For VPD pages, use this option with \fI\-\-inquiry\fR. This will cause all VPD
+pages from 0x0 to 0xbf to be probed by default. A sequence of VPD pages can
+be probed with \fI\-\-page=PG[,SPG]\fR in which case VPD pages from PG (lower
+number) to SPG (high number) inclusive are probed. Vendor specific VPD pages
+run from 0xc0 to 0xff and can be probed by setting SPG from 0xc0 to 0xff.
 .TP
 \fB\-f\fR, \fB\-\-flexible\fR
 Some devices, bridges and/or drivers attempt crude transformations between
@@ -197,6 +225,9 @@ Information VPD page which usually outputs its IDENTIFY (PACKET) DEVICE
 response in 16 bit hex words; with '\-HH' outputs that response in hex
 bytes; with '\-HHH' outputs the same response in a format suitable
 for 'hdparm \-\-Istdin' to decode.
+.br
+Mode page output with the '\-HHH' option is suitable for a later invocation
+of sdparm with the \fI\-\-inhex=FN\fR option.
 .TP
 \fB\-i\fR, \fB\-\-inquiry\fR
 output a VPD page which is in the response of a SCSI INQUIRY command sent
@@ -211,8 +242,9 @@ output.
 \fIFN\fR is expected to be a file name (or '\-' for stdin) which contains
 ASCII hexadecimal (or binary) representing the response to MODE SENSE(10).
 If \fI\-\-six\fR is also given then the response from MODE SENSE(6) is
-assumed. A MODE SENSE response contains one or more mode pages. This
-utility will decode the first one unless the \fI\-\-all\fR option is
+assumed. A MODE SENSE response contains a mode parameter header, then 0
+or more block descriptors followed by one or more mode pages. This utility
+will only decode the first mode page unless the \fI\-\-all\fR option is
 given. In order to decode a mode page the peripheral device type is often
 needed and can be supplied with the \fI\-\-pdt=DT\fR option. If the
 \fI\-\-pdt=DT\fR is not given then a mode page found in two device type
@@ -232,10 +264,21 @@ units if applicable) is output to the right. If used twice, then for some
 fields more information about its values is given on one or more following
 lines, each prefixed by a tab character. For usage with \fI\-\-enumerate\fR
 see the ENUMERATE section below.
+.br
+When this option is used along with \fI\-\-command=capacity\fR then the
+READ CAPACITY(16) is sent to the \fIDEVICE\fR and if successful its extended
+response is output.
 .TP
 \fB\-n\fR, \fB\-\-num\-desc\fR
 for a mode page that can have descriptors, the number of descriptors for the
 given page on the \fIDEVICE\fR is output. Otherwise 0 is output.
+.TP
+\fB\-o\fR, \fB\-\-out\-mask\fR=\fIOM\fR
+\fIOM\fR is a bit mask for mode page selections that will be printed/output.
+The 0x1 value is for the 'current' values, 0x2 is for the 'changeable'
+values, 0x4 is for the 'default' values and 0x8 is for the 'saveable' values.
+The default value is 0xf (i.e. the OR of all four values set). The option is
+useful for limiting the amount of output with the '\-HHH'.
 .TP
 \fB\-p\fR, \fB\-\-page\fR=\fIPG[,SPG]\fR
 supply the page number (\fIPG\fR) and optionally the sub page
@@ -256,8 +299,8 @@ usage with \fI\-\-enumerate\fR see the ENUMERATE section below.
 \fB\-P\fR, \fB\-\-pdt\fR=\fIDT\fR
 This option is only active when the \fI\-\-inhex=FN\fR option is given.
 \fIDT\fR is the peripheral Device Type, a value between 0 and 31 and
-can be found in the reponse to the INQUIRY command. The default value
-is -1 (which may also be given for \fIDT\fR) and it is interpreted as
+can be found in the response to the INQUIRY command. The default value
+is \-1 (which may also be given for \fIDT\fR) and it is interpreted as
 SPC (i.e. common mode pages) or as a wild card. If available this option
 should be supplied with the \fI\-\-inhex=FN\fR option.
 .TP
@@ -310,21 +353,32 @@ SCSI commands with 10 byte cdbs. When this option is given the 6 byte cdb
 variants are used. RBC and old SCSI devices may need this option. This
 utility outputs a suggestion to use this option if the SCSI status indicates
 that the 10 byte cdb variant is not supported.
+.br
+The SPC\-4 standard (and SPC\-5 drafts) include a note stating that
+implementers migrate away from the SCSI MODE SELECT(6) and MODE SENSE(6)
+commands in favour of the 10 byte variants (e.g.  MODE SEMSE(10)).
 .TP
 \fB\-t\fR, \fB\-\-transport\fR=\fITN\fR
-Specifies the transport protocol where \fITN\fR is either a number in
-the range 0 to 15 (inclusive) or an abbreviation (e.g. "fcp" for
-the Fibre Channel Protocol). One way to list available transport protocols
-numbers and their associated abbreviations is to give an invalid
-transport protocol number such as '\-t x'; another way is '\-e \-l'.
+Specifies the transport protocol where \fITN\fR is either a number in the
+range 0 to 15 (inclusive) or an abbreviation (e.g. "fcp" for the Fibre
+Channel Protocol). Some transports accept multiple abbreviations, for example
+srp (SCSI RDMA Protocol) and ib (short for InfiniBand) both are accepted for
+transport protocol 0x4 . Also both upper and lower case are accepted so iscsi
+and iSCSI are accepted for transport protocol 0x5 . One way to list available
+transport protocols numbers and their associated abbreviations is to give an
+invalid transport protocol name such as '\-t x'; another way is '\-e \-l'.
 N.B. The \fI\-\-all\fR option may still be needed to show all available
 fields.
 .TP
 \fB\-M\fR, \fB\-\-vendor\fR=\fIVN\fR
 Specifies the vendor (i.e. manufacturer) where \fIVN\fR is either a number (0
 or more) or an abbreviation (e.g. "sea" for Seagate disk vendor specific).
-One way to list available vendor numbers and their associated abbreviations
-is to give an invalid vendor number such as '\-M x'; another way is '\-e \-l'.
+For tape drives "lto5" and "lto6" are treated as vendors. One way to list
+the available vendor numbers and their associated abbreviations is to give an
+invalid vendor number such as '\-M x'; another way is '\-e \-l'.
+.br
+This option only effects mode page decodes, not VPD pages. For vendor
+specific VPD pages see the sg_vpd utility.
 .TP
 \fB\-v\fR, \fB\-\-verbose\fR
 increase the level of verbosity, (i.e. debug output). In some cases
@@ -342,11 +396,11 @@ is added. When used four times only a SCSI adapter scan is shown.
 See examples below and the "Win32 port" section in the README file.
 .SH NOTES
 The reference document used for interpreting mode and VPD pages (and the
-INQUIRY standard response) is T10/BSR INCITS 502 Revision 02 (SPC\-5, 3
-January 2015) found at http://www.t10.org . Obsolete and reserved items
+INQUIRY standard response) is T10/BSR INCITS 502 Revision 17 (SPC\-5, 19
+September 2017) found at http://www.t10.org . Obsolete and reserved items
 in the standard INQUIRY response output are displayed in brackets. Recent
 drafts of other T10 documents are also used: SBC\-4 (disks), SSC\-5 (tapes),
-SPL\-4 (SAS transport) and SAT\-4 (SCSI to ATA Translation).
+SPL\-5 (SAS transport) and SAT\-4 (SCSI to ATA Translation).
 .PP
 A mode page for which no abbreviation is known (e.g. a vendor specific mode
 page) can be listed in hexadecimal by using the option
@@ -366,7 +420,7 @@ corresponds to the \fI\-\-save\fR option) is _not_ set. In such cases
 the \fI\-\-save\fR option needs to be given.
 .PP
 If the \fI\-\-save\fR option is given but the existing mode page indicates (via
-its PS bit) that the page is not savable, then this utility generates
+its PS bit) that the page is not saveable, then this utility generates
 an error message. That message suggests to try again without the
 \fI\-\-save\fR option.
 .PP
@@ -384,7 +438,7 @@ Only those VPD pages defined by t10.org are decoded by this utility. SPC\-4
 sets aside VPD pages codes from 0xc0 to 0xff (inclusive) for vendor
 specific pages some of which are decoded in the sg_vpd utility.
 .PP
-To see all VPD pages supported by a \fIDEVICE\fR use 'sg_vpd --all'.
+To see all VPD pages supported by a \fIDEVICE\fR use 'sg_vpd \-\-all'.
 .PP
 In the linux kernel 2.6 and 3 series any device node that understands a SCSI
 command set (e.g. SCSI disks and CD/DVD drives) may be specified. More
@@ -559,10 +613,15 @@ command fails then this is reflected in the non\-zero exit status.
 To obtain more information about the error use the \fI\-v\fR option.
 .TP
 capacity
-sends a READ CAPACITY command (valid for
-disks and cd/dvd media). If successful yields "blocks: " [the number
-of blocks], "block_length: " [typically either 512 or 2048]
+sends a READ CAPACITY(10) command (valid for disks and cd/dvd media) by
+default. If successful yields "blocks: " [the number of
+blocks], "block_length: " [typically either 512 or 2048]
 and "capacity_mib: " [capacity in MibiBytes (1048576 byte units)].
+.PP
+If the number of blocks is too large to fit in the 4 byte field provided
+by READ CAPACITY(10) or, the \fI\-\-long\fR option is given, then the
+READ CAPACITY(16) command is sent. If the \fI\-\-long\fR option is given,
+then the extra fields found in the READ CAPACITY(16) response are output.
 .TP
 eject
 stops the medium and ejects it from the device.
@@ -573,8 +632,8 @@ media. Objects if sent to another peripheral device type (but objection
 can be overridden with '\-f' option).
 .TP
 load
-loads the medium and and starts it (i.e. spins it up).
-See 'eject' command for supported device types.
+loads the medium and starts it (i.e. spins it up). See 'eject' command for
+supported device types.
 .TP
 profile
 lists the various formats that a CD/DVD/HD\-DVD/BD drive supports. These are
@@ -726,7 +785,7 @@ PD1     [DF]    WD        2500BEV External  1.05  WD\-WXE90
 CDROM0  [E]     MATSHITA DVD/CDRW UJDA775  CB03
 .PP
 So 'sdparm \-a CDROM0' and 'sdparm \-a E' will show all the (known) mode page
-fields for the Matshita DVD/CD drive. By using the '\-\-wsacan' option twice,
+fields for the Matshita DVD/CD drive. By using the '\-\-wscan' option twice,
 the bus type (as seen by the OS) is added to the output:
 .PP
   # sdparm \-ww
@@ -792,15 +851,28 @@ command was sent. The requested command has not been executed by the
 device. Note that unit attention conditions are usually only reported
 once by a device.
 .TP
+.B 7
+the \fIDEVICE\fR reports a "data protect" sense key. This implies some
+mechanism has blocked writes (or possibly all access to the media).
+.TP
 .B 9
 the \fIDEVICE\fR reports an illegal request with an additional
 sense code of "invalid operation code" which means that it doesn't
 support the requested command.
 .TP
+.B 10
+the \fIDEVICE\fR reports a "copy aborted". This implies another command or
+device problem has stopped a copy operation. The EXTENDED COPY family of
+commands (including WRITE USING TOKEN) may return this sense key.
+.TP
 .B 11
 the \fIDEVICE\fR reports an aborted command. In some cases aborted
 commands can be retried immediately (e.g. if the transport aborted
 the command due to congestion).
+.TP
+.B 14
+the \fIDEVICE\fR reports a miscompare sense key. VERIFY and COMPARE AND
+WRITE commands may report this.
 .TP
 .B 15
 the utility is unable to open, close or use the given \fIDEVICE\fR.
@@ -818,6 +890,10 @@ was successful. Most likely a utility will report a recovered error
 to stderr and continue, probably leaving the utility with an exit
 status of 0 .
 .TP
+.B 22
+the \fIDEVICE\fR reports that the current command or its parameters imply
+a logical block address (LBA) that is out of range.
+.TP
 .B 24
 the \fIDEVICE\fR reports a SCSI status of "reservation conflict". This
 means access to the \fIDEVICE\fR with the current command has been blocked
@@ -832,7 +908,7 @@ the PRE\-FETCH command (see SBC\-4) yields this status.
 .B 26
 the \fIDEVICE\fR reports a SCSI status of "busy". SAM\-5 defines this
 status as the logical unit is temporarily unable to process a command.
-It is recommended to re-issue the command.
+It is recommended to re\-issue the command.
 .TP
 .B 27
 the \fIDEVICE\fR reports a SCSI status of "task set full".
@@ -852,6 +928,30 @@ the command sent to \fIDEVICE\fR has timed out. This occurs in Linux
 only; in other ports a command timeout will appear as a transport (or OS)
 error.
 .TP
+.B 40
+the command sent to \fIDEVICE\fR has received an "aborted command" sense
+key with an additional sense code of 0x10. This value is related to
+problems with protection information (PI or DIF). For example this error
+may occur when reading a block on a drive that has never been written (or
+is unmapped) if that drive was formatted with type 1, 2 or 3 protection.
+.TP
+.B 48
+this is an internal message indicating a NVMe status field (SF) is other
+than zero after a command has been executed (i.e. something went wrong).
+Work in this area is currently experimental.
+.TP
+.B 49
+low level driver reports a response's residual count (i.e. number of bytes
+actually received by HBA is 'requested_bytes \- residual_count') that is
+too high. So no useful processing can be done with that response.
+.TP
+.B 50 + <os_error_number>
+OS system calls that fail often return a small integer number to help
+indicate what the error is. For example in Unix the inability of a system
+call to allocate memory returns (in 'errno') ENOMEM which often is
+associated with the integer 12. So 62 (i.e. '50 + 12') may be returned
+by a utility in this case.
+.TP
 .B 97
 the response to a SCSI command failed sanity checks.
 .TP
@@ -863,6 +963,25 @@ doesn't fit into any of the above categories.
 any errors that can't be categorized into values 1 to 98 may yield
 this value. This includes transport and operating system errors
 after the command has been sent to the device.
+.TP
+.B 126
+the utility was found but could not be executed. That might occur if the
+executable does not have execute permissions.
+.TP
+.B 127
+This is the exit status for utility not found. That might occur when a
+script calls a utility in this package but the PATH environment variable
+has not been properly set up, so the script cannot find the executable.
+.TP
+.B 128 + <signum>
+If a signal kills a utility then the exit status is 128 plus the signal
+number. For example if a segmentation fault occurs then a utility is
+typically killed by SIGSEGV which according to 'man 7 signal' has an
+associated signal number of 11; so the exit status will be 139 .
+.TP
+.B 255
+the utility tried to yield an exit status of 255 or larger. That should
+not happen; given here for completeness.
 .PP
 Most of the error conditions reported above will be repeatable (an
 example of one that is not is "unit attention") so the utility can
@@ -873,13 +992,13 @@ Written by Douglas Gilbert.
 .SH "REPORTING BUGS"
 Report bugs to <dgilbert at interlog dot com>.
 .SH COPYRIGHT
-Copyright \(co 2005\-2016 Douglas Gilbert
+Copyright \(co 2005\-2021 Douglas Gilbert
 .br
 This software is distributed under a FreeBSD license. There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 .SH WEB SITE
 There is a web page discussing this package at
-http://sg.danny.cz/sg/sdparm.html .
+https://sg.danny.cz/sg/sdparm.html .
 .SH "SEE ALSO"
 .B hdparm(hdparm),
 .B sg_modes, sg_wr_mode, sginfo, sg_inq, sg_vpd(all in sg3_utils),

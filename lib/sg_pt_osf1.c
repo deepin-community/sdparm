@@ -1,8 +1,10 @@
 /*
- * Copyright (c) 2005-2015 Douglas Gilbert.
+ * Copyright (c) 2005-2020 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
  */
 
 #include <fcntl.h>
@@ -20,14 +22,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <string.h>
 #include <errno.h>
 
 #include "sg_pt.h"
 #include "sg_lib.h"
+#include "sg_pr2serr.h"
 
+/* Version 2.03 20200722 */
 
 #define OSF1_MAXDEV 64
+
+#ifndef CAM_DIR_BOTH
+#define CAM_DIR_BOTH 0x0        /* copy value from FreeBSD */
+#endif
 
 struct osf1_dev_channel {
     int bus;
@@ -43,11 +52,11 @@ static int camfd;
 static int camopened = 0;
 
 struct sg_pt_osf1_scsi {
-    unsigned char * cdb;
+    uint8_t * cdb;
     int cdb_len;
-    unsigned char * sense;
+    uint8_t * sense;
     int sense_len;
-    unsigned char * dxferp;
+    uint8_t * dxferp;
     int dxfer_len;
     int dxfer_dir;
     int scsi_status;
@@ -56,36 +65,18 @@ struct sg_pt_osf1_scsi {
     int in_err;
     int os_err;
     int transport_err;
+    bool is_nvme;
+    int dev_fd;
 };
 
 struct sg_pt_base {
     struct sg_pt_osf1_scsi impl;
 };
 
-#ifdef __GNUC__
-static int pr2ws(const char * fmt, ...)
-        __attribute__ ((format (printf, 1, 2)));
-#else
-static int pr2ws(const char * fmt, ...);
-#endif
-
-
-static int
-pr2ws(const char * fmt, ...)
-{
-    va_list args;
-    int n;
-
-    va_start(args, fmt);
-    n = vfprintf(sg_warnings_strm ? sg_warnings_strm : stderr, fmt, args);
-    va_end(args);
-    return n;
-}
-
 
 /* Returns >= 0 if successful. If error in Unix returns negated errno. */
 int
-scsi_pt_open_device(const char * device_name, int read_only, int verbose)
+scsi_pt_open_device(const char * device_name, bool read_only, int verbose)
 {
     int oflags = 0 /* O_NONBLOCK*/ ;
 
@@ -180,16 +171,25 @@ scsi_pt_close_device(int device_fd)
 }
 
 struct sg_pt_base *
-construct_scsi_pt_obj()
+construct_scsi_pt_obj_with_fd(int device_fd, int verbose)
 {
     struct sg_pt_osf1_scsi * ptp;
 
     ptp = (struct sg_pt_osf1_scsi *)malloc(sizeof(struct sg_pt_osf1_scsi));
     if (ptp) {
         bzero(ptp, sizeof(struct sg_pt_osf1_scsi));
+        ptp->dev_fd = (device_fd < 0) ? -1 : device_fd;
+        ptp->is_nvme = false;
         ptp->dxfer_dir = CAM_DIR_NONE;
-    }
+    } else if (verbose)
+        pr2ws("%s: malloc() out of memory\n", __func__);
     return (struct sg_pt_base *)ptp;
+}
+
+struct sg_pt_base *
+construct_scsi_pt_obj(void)
+{
+    return construct_scsi_pt_obj_with_fd(-1, 0);
 }
 
 void
@@ -204,42 +204,79 @@ destruct_scsi_pt_obj(struct sg_pt_base * vp)
 void
 clear_scsi_pt_obj(struct sg_pt_base * vp)
 {
+    bool is_nvme;
+    int dev_fd;
     struct sg_pt_osf1_scsi * ptp = &vp->impl;
 
     if (ptp) {
+        is_nvme = ptp->is_nvme;
+        dev_fd = ptp->dev_fd;
         bzero(ptp, sizeof(struct sg_pt_osf1_scsi));
+        ptp->dev_fd = dev_fd;
+        ptp->is_nvme = is_nvme;
         ptp->dxfer_dir = CAM_DIR_NONE;
     }
 }
 
 void
-set_scsi_pt_cdb(struct sg_pt_base * vp, const unsigned char * cdb,
+partial_clear_scsi_pt_obj(struct sg_pt_base * vp)
+{
+    struct sg_pt_osf1_scsi * ptp = &vp->impl;
+
+    if (NULL == ptp)
+        return;
+    ptp->in_err = 0;
+    ptp->os_err = 0;
+    ptp->transport_err = 0;
+    ptp->scsi_status = 0;
+    ptp->dxfer_dir = CAM_DIR_NONE;
+    ptp->dxferp = NULL;
+    ptp->dxfer_len = 0;
+}
+
+void
+set_scsi_pt_cdb(struct sg_pt_base * vp, const uint8_t * cdb,
                 int cdb_len)
 {
     struct sg_pt_osf1_scsi * ptp = &vp->impl;
 
-    if (ptp->cdb)
-        ++ptp->in_err;
-    ptp->cdb = (unsigned char *)cdb;
+    ptp->cdb = (uint8_t *)cdb;
     ptp->cdb_len = cdb_len;
 }
 
+int
+get_scsi_pt_cdb_len(const struct sg_pt_base * vp)
+{
+    const struct sg_pt_osf1_scsi * ptp = &vp->impl;
+
+    return ptp->cdb_len;
+}
+
+uint8_t *
+get_scsi_pt_cdb_buf(const struct sg_pt_base * vp)
+{
+    const struct sg_pt_osf1_scsi * ptp = &vp->impl;
+
+    return ptp->cdb;
+}
+
 void
-set_scsi_pt_sense(struct sg_pt_base * vp, unsigned char * sense,
+set_scsi_pt_sense(struct sg_pt_base * vp, uint8_t * sense,
                   int max_sense_len)
 {
     struct sg_pt_osf1_scsi * ptp = &vp->impl;
 
-    if (ptp->sense)
-        ++ptp->in_err;
-    bzero(sense, max_sense_len);
+    if (sense) {
+        if (max_sense_len > 0)
+            bzero(sense, max_sense_len);
+    }
     ptp->sense = sense;
     ptp->sense_len = max_sense_len;
 }
 
 /* from device */
 void
-set_scsi_pt_data_in(struct sg_pt_base * vp, unsigned char * dxferp,
+set_scsi_pt_data_in(struct sg_pt_base * vp, uint8_t * dxferp,
                     int dxfer_len)
 {
     struct sg_pt_osf1_scsi * ptp = &vp->impl;
@@ -255,7 +292,7 @@ set_scsi_pt_data_in(struct sg_pt_base * vp, unsigned char * dxferp,
 
 /* to device */
 void
-set_scsi_pt_data_out(struct sg_pt_base * vp, const unsigned char * dxferp,
+set_scsi_pt_data_out(struct sg_pt_base * vp, const uint8_t * dxferp,
                      int dxfer_len)
 {
     struct sg_pt_osf1_scsi * ptp = &vp->impl;
@@ -263,7 +300,7 @@ set_scsi_pt_data_out(struct sg_pt_base * vp, const unsigned char * dxferp,
     if (ptp->dxferp)
         ++ptp->in_err;
     if (dxfer_len > 0) {
-        ptp->dxferp = (unsigned char *)dxferp;
+        ptp->dxferp = (uint8_t *)dxferp;
         ptp->dxfer_len = dxfer_len;
         ptp->dxfer_dir = CAM_DIR_OUT;
     }
@@ -343,7 +380,7 @@ do_scsi_pt(struct sg_pt_base * vp, int device_fd, int time_secs, int verbose)
     int len, retval;
     CCB_SCSIIO ccb;
     UAGT_CAM_CCB uagt;
-    unsigned char sensep[ADDL_SENSE_LENGTH];
+    uint8_t sensep[ADDL_SENSE_LENGTH];
 
 
     ptp->os_err = 0;
@@ -352,19 +389,36 @@ do_scsi_pt(struct sg_pt_base * vp, int device_fd, int time_secs, int verbose)
             pr2ws("Replicated or unused set_scsi_pt...\n");
         return SCSI_PT_DO_BAD_PARAMS;
     }
+    if (device_fd < 0) {
+        if (ptp->dev_fd < 0) {
+            if (verbose)
+                pr2ws("%s: No device file descriptor given\n", __func__);
+            return SCSI_PT_DO_BAD_PARAMS;
+        }
+    } else {
+        if (ptp->dev_fd >= 0) {
+            if (device_fd != ptp->dev_fd) {
+                if (verbose)
+                    pr2ws("%s: file descriptor given to create and this "
+                          "differ\n", __func__);
+                return SCSI_PT_DO_BAD_PARAMS;
+            }
+        } else
+            ptp->dev_fd = device_fd;
+    }
     if (NULL == ptp->cdb) {
         if (verbose)
             pr2ws("No command (cdb) given\n");
         return SCSI_PT_DO_BAD_PARAMS;
     }
 
-    if ((device_fd < 0) || (device_fd >= OSF1_MAXDEV)) {
+    if ((ptp->dev_fd < 0) || (ptp->dev_fd >= OSF1_MAXDEV)) {
         if (verbose)
             pr2ws("Bad file descriptor\n");
         ptp->os_err = ENODEV;
         return -ptp->os_err;
     }
-    fdchan = devicetable[device_fd];
+    fdchan = devicetable[ptp->dev_fd];
     if (NULL == fdchan) {
         if (verbose)
             pr2ws("File descriptor closed??\n");
@@ -418,7 +472,7 @@ do_scsi_pt(struct sg_pt_base * vp, int device_fd, int time_secs, int verbose)
 
     /* If the SIM queue is frozen, release SIM queue. */
     if (ccb.cam_ch.cam_status & CAM_SIM_QFRZN)
-        release_sim(vp, device_fd, verbose);
+        release_sim(vp, ptp->dev_fd, verbose);
 
     return 0;
 }
@@ -449,6 +503,49 @@ get_scsi_pt_resid(const struct sg_pt_base * vp)
     return ptp->resid;
 }
 
+void
+get_pt_req_lengths(const struct sg_pt_base * vp, int * req_dinp,
+                   int * req_doutp)
+{
+    const struct sg_pt_osf1_scsi * ptp = &vp->impl;
+    bool bidi = (ptp->dxfer_dir == CAM_DIR_BOTH);
+
+    if (req_dinp) {
+        if (ptp->dxfer_len > 0)
+            *req_dinp = ptp->dxfer_len;
+        else
+            *req_dinp = 0;
+    }
+    if (req_doutp) {
+        if ((!bidi) && (ptp->dxfer_len > 0))
+            *req_doutp = ptp->dxfer_len;
+        else
+            *req_doutp = 0;
+    }
+}
+
+void
+get_pt_actual_lengths(const struct sg_pt_base * vp, int * act_dinp,
+                      int * act_doutp)
+{
+    const struct sg_pt_osf1_scsi * ptp = &vp->impl;
+    bool bidi = (ptp->dxfer_dir == CAM_DIR_BOTH);
+
+    if (act_dinp) {
+        if (ptp->dxfer_len > 0)
+            *act_dinp = ptp->dxfer_len - ptp->resid;
+        else
+            *act_dinp = 0;
+    }
+    if (act_doutp) {
+        if ((!bidi) && (ptp->dxfer_len > 0))
+            *act_doutp = ptp->dxfer_len - ptp->resid;
+        else
+            *act_doutp = 0;
+    }
+}
+
+
 int
 get_scsi_pt_status_response(const struct sg_pt_base * vp)
 {
@@ -467,12 +564,28 @@ get_scsi_pt_sense_len(const struct sg_pt_base * vp)
     return (len > 0) ? len : 0;
 }
 
+uint8_t *
+get_scsi_pt_sense_buf(const struct sg_pt_base * vp)
+{
+    const struct sg_pt_osf1_scsi * ptp = &vp->impl;
+
+    return ptp->sense;
+}
+
 int
 get_scsi_pt_duration_ms(const struct sg_pt_base * vp)
 {
     // const struct sg_pt_osf1_scsi * ptp = &vp->impl;
 
     return -1;
+}
+
+/* If not available return 0 otherwise return number of nanoseconds that the
+ * lower layers (and hardware) took to execute the command just completed. */
+uint64_t
+get_pt_duration_ns(const struct sg_pt_base * vp __attribute__ ((unused)))
+{
+    return 0;
 }
 
 int
@@ -489,6 +602,14 @@ get_scsi_pt_os_err(const struct sg_pt_base * vp)
     const struct sg_pt_osf1_scsi * ptp = &vp->impl;
 
     return ptp->os_err;
+}
+
+bool
+pt_device_is_nvme(const struct sg_pt_base * vp)
+{
+    const struct sg_pt_osf1_scsi * ptp = &vp->impl;
+
+    return ptp ? ptp->is_nvme : false;
 }
 
 char *
@@ -518,4 +639,14 @@ get_scsi_pt_os_err_str(const struct sg_pt_base * vp, int max_b_len, char * b)
     if ((int)strlen(cp) >= max_b_len)
         b[max_b_len - 1] = '\0';
     return b;
+}
+
+int
+do_nvm_pt(struct sg_pt_base * vp, int submq, int timeout_secs, int verbose)
+{
+    if (vp) { }
+    if (submq) { }
+    if (timeout_secs) { }
+    if (verbose) { }
+    return SCSI_PT_DO_NOT_SUPPORTED;
 }

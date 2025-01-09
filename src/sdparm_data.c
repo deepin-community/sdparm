@@ -1,33 +1,35 @@
 /*
- * Copyright (c) 2005-2016 Douglas Gilbert.
+ * Copyright (c) 2005-2021, Douglas Gilbert
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <stdlib.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "sg_lib.h"
 #include "sdparm.h"
 
@@ -48,42 +50,42 @@
 /* SSC's medium partition mode page has a variable number of
    partition size fields which are treated as descriptors here */
 static struct sdparm_mode_descriptor_t ssc_mpa_desc = {
-    3, 1, 1, 8, 2, -1, -1, "SSC medium partition"
+    3, 1, 1, 8, 2, -1, -1, false, "SSC medium partition"
 };
 
 /* SMC's transport geometry parameters mode page doesn't give the number
    of following descriptors but rather parameter length (in bytes).
    This is flagged by -1 in num_descs_inc (third) field */
 static struct sdparm_mode_descriptor_t smc_tg_desc = {
-    1, 1, -1, 2, 2, -1, -1, "SMC transport geometry"
+    1, 1, -1, 2, 2, -1, -1, false, "SMC transport geometry"
 };
 
 /* SBC's logical block provisioning mode page doesn't give the number
    of following descriptors but rather parameter length (in bytes).
    This is flagged by -1 in num_descs_inc (third) field */
 static struct sdparm_mode_descriptor_t sbc_lbp_desc = {
-    2, 2, -1, 16, 8, -1, -1, "SBC logical block provisioning"
+    2, 2, -1, 16, 8, -1, -1, false, "SBC logical block provisioning"
 };
 
 /* SBC's application tag mode page doesn't give the number of
    following descriptors but rather parameter length (in bytes).
    This is flagged by -1 in num_descs_inc (third) field */
 static struct sdparm_mode_descriptor_t sbc_atag_desc = {
-    2, 2, -1, 16, 24, -1, -1, "SBC application tag"
+    2, 2, -1, 16, 24, -1, -1, false, "SBC application tag"
 };
 
 /* SPC's command duration limit A/B mode pages don't give the number of
    following descriptors but rather parameter length (in bytes).
    This is flagged by -1 in num_descs_inc (third) field */
 static struct sdparm_mode_descriptor_t spc_cdl_desc = {
-    2, 2, -1, 8, 4, -1, -1, "command duration limit"
+    2, 2, -1, 8, 4, -1, -1, false, "command duration limit"
 };
 
 /* SBC's IO advice hints grouping mode page doesn't give the number of
    following descriptors but rather parameter length (in bytes).
    This is flagged by -1 in num_descs_inc (third) field */
 static struct sdparm_mode_descriptor_t sbc_ioadvi_desc = {
-    2, 2, -1, 16, 16, -1, -1, "IO advice hints group"
+    2, 2, -1, 16, 16, -1, -1, false, "IO advice hints group"
 };
 
 /* Mode pages that aren't specific to any transport protocol or vendor.
@@ -93,22 +95,27 @@ struct sdparm_mode_page_t sdparm_gen_mode_pg[] = {
     {ADC_MP, MSP_ADC_DT_DPP, PDT_ADC, 0, "addp",
         "DT device primary port (ADC)", NULL},
     {ADC_MP, MSP_ADC_LU, PDT_ADC, 0, "adlu", "logical unit (ADC)", NULL},
-    {ADC_MP, MSP_ADC_TGT_DEV, PDT_ADC, 0, "adtd", "Targer device (ADC)",
+    {ADC_MP, MSP_ADC_TGT_DEV, PDT_ADC, 0, "adtd", "Target device (ADC)",
         NULL},
     {ADC_MP, MSP_ADC_TD_SN, PDT_ADC, 0, "adts",
-        "Targer device serial number (ADC)", NULL},
+        "Target device serial number (ADC)", NULL},
+    {CONTROL_MP, MSP_SAT_AFC, -1, 0, "afc", "SAT ATA Feature control", NULL},
     {POWER_MP, MSP_SAT_POWER, -1, 0, "apo", "SAT ATA Power condition", NULL},
-    {CONTROL_MP, MSP_SBC_APP_TAG, PDT_DISK, 0, "atag", "Application tag "
+    {CONTROL_MP, MSP_SBC_APP_TAG, PDT_DISK_ZBC, 0, "atag", "Application tag "
         "(SBC)", &sbc_atag_desc},
-    {IEC_MP, MSP_BACK_CTL, PDT_DISK, 0, "bc", "Background control (SBC)",
+    {IEC_MP, MSP_BACK_CTL, PDT_DISK_ZBC, 0, "bc", "Background control (SBC)",
         NULL},
-    {CONTROL_MP, MSP_SBC_BACK_OP, PDT_DISK, 0, "bop", "Background operation "
-        "control (SBC)", NULL},
-    {CACHING_MP, 0, PDT_DISK, 0, "ca", "Caching (SBC)", NULL},
+    {CONTROL_MP, MSP_SBC_BACK_OP, PDT_DISK, 0, "bop",
+        "Background operation control (SBC)", NULL},
+    {CACHING_MP, 0, PDT_DISK_ZBC, 0, "ca", "Caching (SBC)", NULL},
     {CONTROL_MP, MSP_SPC_CDLA, -1, 0, "cdla", "Command duration limit A",
         &spc_cdl_desc},
     {CONTROL_MP, MSP_SPC_CDLB, -1, 0, "cdlb", "Command duration limit B",
         &spc_cdl_desc},
+    {CONTROL_MP, MSP_SPC_CDLT2A, -1, 0, "cdt2a", "Command duration limit T2A",
+        NULL /* spc6r01 */ },
+    {CONTROL_MP, MSP_SPC_CDLT2B, -1, 0, "cdt2b", "Command duration limit T2B",
+        NULL /* spc6r01 */ },
     {MMCMS_MP, 0, PDT_MMC, 1, "cms", "CD/DVD (MM) capabilities and "
         "mechanical status (MMC)", NULL},        /* read only */
     {CONTROL_MP, 0, -1, 0, "co", "Control", NULL},
@@ -129,6 +136,7 @@ struct sdparm_mode_page_t sdparm_gen_mode_pg[] = {
         "Extended device capabilities (SMC)", NULL},
     {ES_MAN_MP, 0, PDT_SES, 0, "esm", "Enclosure services management (SES)",
         NULL},
+    {FLEX_DISK_MP, 0, PDT_DISK, 0, "fd", "Flexible disk (SBC)", NULL},
     {FORMAT_MP, 0, PDT_DISK, 0, "fo", "Format (SBC)", NULL},
     {IEC_MP, 0, -1, 0, "ie", "Informational exceptions control", NULL},
     {CONTROL_MP, MSP_SBC_IO_ADVI, 0, 0, "ioad", "IO advice hints grouping",
@@ -139,6 +147,7 @@ struct sdparm_mode_page_t sdparm_gen_mode_pg[] = {
     {MED_PART_MP, 0, PDT_TAPE, 0, "mpa", "Medium partition (SSC)",
         &ssc_mpa_desc},
     {MRW_MP, 0, PDT_MMC, 0, "mrw", "Mount rainier reWritable (MMC)", NULL},
+    {NOTCH_MP, 0, PDT_DISK, 0, "not", "Notch and partition (SBC)", NULL},
     {CONTROL_MP, MSP_SAT_PATA, -1, 0, "pat", "SAT pATA control", NULL},
     {PROT_SPEC_LU_MP, 0, -1, 0, "pl", "Protocol specific logical unit", NULL},
     {POWER_MP, 0, -1, 0, "po", "Power condition", NULL},
@@ -154,38 +163,51 @@ struct sdparm_mode_page_t sdparm_gen_mode_pg[] = {
     {TRANS_GEO_PAR_MP, 0, PDT_MCHANGER, 0, "tgp", "Transport geometry "
         "parameters (SMC)", &smc_tg_desc},
     {TIMEOUT_PROT_MP, 0, PDT_MMC, 0, "tp", "Timeout and protect (MMC)", NULL},
-    {V_ERR_RECOVERY_MP, 0, PDT_DISK, 0, "ve", "Verify error recovery (SBC)",
-        NULL},
+    {V_ERR_RECOVERY_MP, 0, PDT_DISK_ZBC, 0, "ve",
+        "Verify error recovery (SBC)", NULL},
     {WRITE_PARAM_MP, 0, PDT_MMC, 0, "wp", "Write parameters (MMC)", NULL},
     {XOR_MP, 0, PDT_DISK, 0, "xo", "XOR control (SBC)", NULL},
         /* XOR control mode page made obsolete in sbc3r32 */
+    {CONTROL_MP, MSP_ZB_D_CTL, PDT_DISK_ZBC, 0, "zbdct",
+        "Zoned block device control (ZBC)", NULL},
     {0, 0, 0, 0, NULL, NULL, NULL},
 };
 
-/* Array for transport id, acronym and name association. */
-/* Those transports commented with "none" don't have transport specific */
-/* mode pages. */
-struct sdparm_transport_id_t sdparm_transport_id[] = {
-    {TPROTO_FCP, "fcp", "Fibre channel (FCP)"},
-    {TPROTO_SPI, "spi", "SCSI parallel interface (SPI)"},
-    {TPROTO_SSA, "ssa", "Serial storage architecture (SSA)"},
-    {TPROTO_1394, "sbp", "Serial bus (SBP)"}, /* none */
-    {TPROTO_SRP, "srp", "SCSI remote DMA (SRP)"},
-    {TPROTO_ISCSI, "iscsi", "Internet SCSI (iSCSI)"}, /* none */
-    {TPROTO_SAS, "sas", "Serial attached SCSI (SAS, SPL) "},
-    {TPROTO_ADT, "adt", "Automation/Drive interface (ADT)"},
-    {TPROTO_ATA, "ata", "AT attachment interface (ATA, ACS)"}, /* none */
-    {TPROTO_UAS, "uas", "USB attached SCSI (UAS)"}, /* none */
-    {TPROTO_SOP, "sop", "SCSI over PCIe (SOP)"}, /* none */
-    {0x9, "u0xb", NULL},      /* leading "u" so not number */
-    {0xc, "u0xc", NULL},
-    {0xd, "u0xd", NULL},
-    {0xe, "u0xe", NULL},
-    {TPROTO_NONE, "none", "No specific"},
-    {0, NULL, NULL},
+/* Array for transport id and corresponding acronyms. The
+ * sg_get_trans_proto_str() function from the sg3_utils' library provides
+ * the full protocol (transport) name. Those transports commented with
+ * "none" don't have transport specific mode pages at this time. */
+struct sdparm_val_desc_t sdparm_transport_id[] = {
+    {TPROTO_FCP, "fcp"},
+    {TPROTO_SPI, "spi"},
+    {TPROTO_SSA, "ssa"},
+    {TPROTO_1394, "sbp"},       /* none */
+    {TPROTO_SRP, "srp"},
+    {TPROTO_ISCSI, "iscsi"},    /* none */
+    {TPROTO_SAS, "sas"},
+    {TPROTO_ADT, "adt"},
+    {TPROTO_ATA, "ata"},        /* none */
+    {TPROTO_UAS, "uas"},        /* none */
+    {TPROTO_SOP, "sop"},        /* none */
+    {TPROTO_PCIE, "pcie"},      /* none */
+    {0xc, "u0xc"},              /* leading "u" so not number */
+    {0xd, "u0xd"},
+    {0xe, "u0xe"},
+    {TPROTO_NONE, "none"},
+    {-1, NULL},
 };
 
-static struct sdparm_mode_page_t sdparm_fcp_mode_pg[] = {    /* FCP-3 */
+struct sdparm_val_desc_t sdparm_add_transport_acron[] = {
+    {TPROTO_SPI, "para"},
+    {TPROTO_SAS, "spl"},
+    {TPROTO_PCIE, "nvme"},
+    {TPROTO_ATA, "sata"},
+    {TPROTO_SRP, "ib"},         /* InfiniBand */
+    {TPROTO_UAS, "usb"},
+    {-1, NULL},
+};
+
+static struct sdparm_mode_page_t sdparm_fcp_mode_pg[] = {    /* FCP-3,5 */
     {DISCONNECT_MP, 0, -1, 0, "dr", "Disconnect-reconnect (FCP)", NULL},
     {PROT_SPEC_LU_MP, 0, -1, 0, "luc", "lu: control (FCP)", NULL},
     {PROT_SPEC_PORT_MP, 0, -1, 0, "pc", "port: control (FCP)", NULL},
@@ -219,11 +241,17 @@ static struct sdparm_mode_page_t sdparm_srp_mode_pg[] = {    /* SRP */
 };
 
 static struct sdparm_mode_descriptor_t sas_pcd_desc = {   /* desc SAS/SPL */
-    7, 1, 0, 8, 48, -1, -1, "SAS phy"
+    7, 1, 0, 8, 48, -1, -1, false, "SAS phy"
 };
 
 static struct sdparm_mode_descriptor_t sas_e_phy_desc = {  /* desc SAS/SPL */
-    7, 1, 0, 8, -1, 2, 2, "Enhanced phy"
+    7, 1, 0, 8, -1, 2, 2, false, "Enhanced phy"
+};
+
+/* This one has a strange format, no number of descriptors and each
+ * descriptor can have a variable size. */
+static struct sdparm_mode_descriptor_t sas_oob_m_c_desc = { /* desc SAS/SPL */
+    -1, -1, 0, 8, -1, 2, 2, true, "Attribute control"
 };
 
 /* N.B. In SAS 2.1 the spec was split with the upper levels going into the
@@ -231,6 +259,8 @@ static struct sdparm_mode_descriptor_t sas_e_phy_desc = {  /* desc SAS/SPL */
  * relevant SAS references. */
 static struct sdparm_mode_page_t sdparm_sas_mode_pg[] = {    /* SAS/SPL */
     {DISCONNECT_MP, 0, -1, 0, "dr", "Disconnect-reconnect (SAS)", NULL},
+    {PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 0, "oobm",     /* spl5r01 */
+        "Out of band management control (SAS)", &sas_oob_m_c_desc},
     {PROT_SPEC_LU_MP, 0, -1, 0, "pl", "Protocol specific logical unit (SAS)",
         NULL},
     {PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 0, "pcd",
@@ -260,6 +290,7 @@ struct sdparm_vpd_page_t sdparm_vpd_pg[] = {
     {VPD_BLOCK_LIMITS_EXT, 0, PDT_DISK, "ble",
      "Block limits extension (SBC)"},
     {VPD_CFA_PROFILE_INFO, 0, -1, "cfa", "CFA profile information"},
+    {VPD_CON_POS_RANGE, 0, 0, "cpr", "Concurrent positioning ranges (SBC)"},
     {VPD_DEVICE_CONSTITUENTS, 0, -1, "dc", "Device constituents"},
     {VPD_DEVICE_ID, 0, -1, "di", "Device identification"},
     {VPD_DEVICE_ID, VPD_DI_SEL_AS_IS, -1, "di_asis", "Like 'di' "
@@ -270,9 +301,10 @@ struct sdparm_vpd_page_t sdparm_vpd_pg[] = {
      "identification, target port only"},
     {VPD_DEVICE_ID, VPD_DI_SEL_TARGET, -1, "di_target", "Device "
      "identification, target device only"},
-    {VPD_EXT_INQ, 0, -1, "ei", "Extended inquiry data"},
     {VPD_DTDE_ADDRESS, 0, 1, "dtde",
      "Data transfer device element address (SSC)"},
+    {VPD_EXT_INQ, 0, -1, "ei", "Extended inquiry data"},
+    {VPD_FORMAT_PRESETS, 0, 0, "fp", "Format presets (SBC)"},
     {VPD_IMP_OP_DEF, 0, -1, "iod",
      "Implemented operating definition (obs)"},
     {VPD_LB_PROTECTION, 0, PDT_TAPE, "lbpro", "Logical block protection "
@@ -285,6 +317,7 @@ struct sdparm_vpd_page_t sdparm_vpd_pg[] = {
      "Manufacturer assigned serial number (ADC)"},
     {VPD_MAN_NET_ADDR, 0, -1, "mna", "Management network addresses"},
     {VPD_MODE_PG_POLICY, 0, -1, "mpp", "Mode page policy"},
+    {SG_NVME_VPD_NICR, 0, -1, "nicr", "NVMe Identify controller response"},
     {VPD_OSD_INFO, 0, PDT_OSD, "oi", "OSD information"},
     {VPD_POWER_CONDITION, 0, -1, "pc", "Power condition"},
     {VPD_POWER_CONSUMPTION, 0, -1, "psm", "Power consumption"},
@@ -294,6 +327,7 @@ struct sdparm_vpd_page_t sdparm_vpd_pg[] = {
     {VPD_REFERRALS, 0, PDT_DISK, "ref", "Referrals (SBC)"},
     {VPD_SA_DEV_CAP, 0, PDT_TAPE, "sad",
      "Sequential access device capabilities (SSC)"},
+    {VPD_SCSI_FEATURE_SETS, 0, -1, "sfs", "SCSI Feature sets"},
     {VPD_SOFTW_INF_ID, 0, -1, "sii", "Software interface identification"},
     {VPD_NOT_STD_INQ, 0, -1, "sinq", "Standard inquiry response"},
     {VPD_UNIT_SERIAL_NUM, 0, -1, "sn", "Unit serial number"},
@@ -303,7 +337,7 @@ struct sdparm_vpd_page_t sdparm_vpd_pg[] = {
     {VPD_SUPPORTED_VPDS, 0, -1, "sv", "Supported VPD pages"},
     {VPD_TA_SUPPORTED, 0, PDT_TAPE, "tas", "TapeAlert supported flags (SSC)"},
     {VPD_3PARTY_COPY, 0, -1, "tpc", "Third party copy (SPC + SBC)"},
-    {VPD_ZBC_DEV_CHARS, 0, -1, "zbdc", "Zoned block device characteristics "
+    {VPD_ZBC_DEV_CHARS, 0, -1, "zbdch", "Zoned block device characteristics "
      "(SBC + ZBC)"},
     {0, 0, 0, NULL, NULL},
 };
@@ -437,6 +471,20 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"MRR", RIGID_DISK_MP, 0, PDT_DISK, 20, 7, 16, 0,
         "Medium rotation rate (rpm)", NULL},
 
+    /* Flexible disk mode page [0x5] sbc (obsolete by sbc2r11) */
+    {"XRATE", FLEX_DISK_MP, 0, PDT_DISK, 2, 7, 16, 0,
+        "Transfer rate", NULL},
+    {"NUM_HD", FLEX_DISK_MP, 0, PDT_DISK, 4, 7, 8, 0,
+        "Number of heads", NULL},
+    {"SECT_TR", FLEX_DISK_MP, 0, PDT_DISK, 5, 7, 8, 0,
+        "Sectors per track", NULL},
+    {"BYTE_SECT", FLEX_DISK_MP, 0, PDT_DISK, 6, 7, 16, 0,
+        "Bytes per sector", NULL},
+    {"NUM_CYL", FLEX_DISK_MP, 0, PDT_DISK, 8, 7, 16, 0,
+        "Number of cylinders", NULL},
+    /* Surely the rest (starting with 'write precompensation') are no
+     * longer used. Some USB mass storage devices (flash) use this mpage. */
+
     /* Write parameters mode page [0x5] mmc5 */
     {"BUFE", WRITE_PARAM_MP, 0, PDT_MMC, 2, 6, 1, MF_COMMON,
         "Buffer underrun free recording enable", NULL},
@@ -452,7 +500,7 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "Multi session",
         "0: next session not allowed (no BO pointer)\t"
         "1: next session not allowed\t"
-        "3: next seesion allowed (indicated by BO pointer)"},
+        "3: next session allowed (indicated by BO pointer)"},
     {"FP", WRITE_PARAM_MP, 0, PDT_MMC, 3, 5, 1, 0,
         "Fixed packet type", NULL},
     {"COPY", WRITE_PARAM_MP, 0, PDT_MMC, 3, 4, 1, 0,
@@ -491,81 +539,81 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "Lock disable", NULL},
 
     /* Verify error recovery mode page [0x7] sbc2 */
-    {"V_EER", V_ERR_RECOVERY_MP, 0, PDT_DISK, 2, 3, 1, 0,
+    {"V_EER", V_ERR_RECOVERY_MP, 0, PDT_DISK_ZBC, 2, 3, 1, 0,
         "Enable early recovery (obsolete) ", NULL}, /* in sbc4r02 */
-    {"V_PER", V_ERR_RECOVERY_MP, 0, PDT_DISK, 2, 2, 1, 0,
+    {"V_PER", V_ERR_RECOVERY_MP, 0, PDT_DISK_ZBC, 2, 2, 1, 0,
         "Post error", NULL},
-    {"V_DTE", V_ERR_RECOVERY_MP, 0, PDT_DISK, 2, 1, 1, 0,
+    {"V_DTE", V_ERR_RECOVERY_MP, 0, PDT_DISK_ZBC, 2, 1, 1, 0,
         "Data terminate on error", NULL},
-    {"V_DCR", V_ERR_RECOVERY_MP, 0, PDT_DISK, 2, 0, 1, 0,
+    {"V_DCR", V_ERR_RECOVERY_MP, 0, PDT_DISK_ZBC, 2, 0, 1, 0,
         "Disable correction (obsolete)", NULL},    /* in sbc4r02 */
-    {"V_RC", V_ERR_RECOVERY_MP, 0, PDT_DISK, 3, 7, 8, 0,
+    {"V_RC", V_ERR_RECOVERY_MP, 0, PDT_DISK_ZBC, 3, 7, 8, 0,
         "Verify retry count", NULL},
-    {"V_COR_S", V_ERR_RECOVERY_MP, 0, PDT_DISK, 4, 7, 8, 0,
+    {"V_COR_S", V_ERR_RECOVERY_MP, 0, PDT_DISK_ZBC, 4, 7, 8, 0,
         "Verify correction span (obsolete)", NULL},
-    {"V_RTL", V_ERR_RECOVERY_MP, 0, PDT_DISK, 10, 7, 16, 0,
+    {"V_RTL", V_ERR_RECOVERY_MP, 0, PDT_DISK_ZBC, 10, 7, 16, 0,
         "Verify recovery time limit (ms)", NULL},
 
     /* Caching mode page [0x8] sbc2 */
-    {"IC", CACHING_MP, 0, PDT_DISK, 2, 7, 1, 0,
+    {"IC", CACHING_MP, 0, PDT_DISK_ZBC, 2, 7, 1, 0,
         "Initiator control",
         "0: disk uses own adaptive caching algorithm\t"
         "1: disk caching algorithm controlled by NCS or CCS"},
-    {"ABPF", CACHING_MP, 0, PDT_DISK, 2, 6, 1, 0,
+    {"ABPF", CACHING_MP, 0, PDT_DISK_ZBC, 2, 6, 1, 0,
         "Abort pre-fetch", NULL},
-    {"CAP", CACHING_MP, 0, PDT_DISK, 2, 5, 1, 0,
+    {"CAP", CACHING_MP, 0, PDT_DISK_ZBC, 2, 5, 1, 0,
         "Caching analysis permitted", NULL},
-    {"DISC", CACHING_MP, 0, PDT_DISK, 2, 4, 1, 0,
+    {"DISC", CACHING_MP, 0, PDT_DISK_ZBC, 2, 4, 1, 0,
         "Discontinuity",
         "0: pre-fetch truncated or wrapped at time discontinuity\t"
         "1: pre-fetch continues across time discontinuity"},
-    {"SIZE", CACHING_MP, 0, PDT_DISK, 2, 3, 1, 0,
+    {"SIZE", CACHING_MP, 0, PDT_DISK_ZBC, 2, 3, 1, 0,
         "Size enable",
         "0: number of cache segments (NCS) controls cache segmentation\t"
         "1: the cache segment size (CCS) controls cache segmentation"},
-    {"WCE", CACHING_MP, 0, PDT_DISK, 2, 2, 1, MF_COMMON,
+    {"WCE", CACHING_MP, 0, PDT_DISK_ZBC, 2, 2, 1, MF_COMMON,
         "Write cache enable", NULL},
-    {"MF", CACHING_MP, 0, PDT_DISK, 2, 1, 1, 0,
+    {"MF", CACHING_MP, 0, PDT_DISK_ZBC, 2, 1, 1, 0,
         "Multiplication factor",
         "0: MIPF and MAPF specify blocks\t"
         "1: multiply MIPF and MAPF by blocks in read command"},
-    {"RCD", CACHING_MP, 0, PDT_DISK, 2, 0, 1, MF_COMMON,
+    {"RCD", CACHING_MP, 0, PDT_DISK_ZBC, 2, 0, 1, MF_COMMON,
         "Read cache disable", NULL},
-    {"DRRP", CACHING_MP, 0, PDT_DISK, 3, 7, 4, 0,
+    {"DRRP", CACHING_MP, 0, PDT_DISK_ZBC, 3, 7, 4, 0,
         "Demand read retention priority",
         "0: treat requested and other data equally\t"
         "1: replace requested data before other data\t"
         "15: replace other data before requested data"},
-    {"WRP", CACHING_MP, 0, PDT_DISK, 3, 3, 4, 0,
+    {"WRP", CACHING_MP, 0, PDT_DISK_ZBC, 3, 3, 4, 0,
         "Write retention priority",
         "0: treat requested and other data equally\t"
         "1: replace requested data before other data\t"
         "15: replace other data before requested data"},
-    {"DPTL", CACHING_MP, 0, PDT_DISK, 4, 7, 16, 0,
+    {"DPTL", CACHING_MP, 0, PDT_DISK_ZBC, 4, 7, 16, 0,
         "Disable pre-fetch transfer length", NULL},
-    {"MIPF", CACHING_MP, 0, PDT_DISK, 6, 7, 16, 0,
+    {"MIPF", CACHING_MP, 0, PDT_DISK_ZBC, 6, 7, 16, 0,
         "Minimum pre-fetch", NULL},
-    {"MAPF", CACHING_MP, 0, PDT_DISK, 8, 7, 16, 0,
+    {"MAPF", CACHING_MP, 0, PDT_DISK_ZBC, 8, 7, 16, 0,
         "Maximum pre-fetch", NULL},
-    {"MAPFC", CACHING_MP, 0, PDT_DISK, 10, 7, 16, 0,
+    {"MAPFC", CACHING_MP, 0, PDT_DISK_ZBC, 10, 7, 16, 0,
         "Maximum pre-fetch ceiling", NULL},
-    {"FSW", CACHING_MP, 0, PDT_DISK, 12, 7, 1, 0,
+    {"FSW", CACHING_MP, 0, PDT_DISK_ZBC, 12, 7, 1, 0,
         "Force sequential write", NULL},
-    {"LBCSS", CACHING_MP, 0, PDT_DISK, 12, 6, 1, 0,
+    {"LBCSS", CACHING_MP, 0, PDT_DISK_ZBC, 12, 6, 1, 0,
         "Logical block cache segment size",
         "0: CSS unit is bytes; 1: CSS unit is blocks"},
-    {"DRA", CACHING_MP, 0, PDT_DISK, 12, 5, 1, 0,
+    {"DRA", CACHING_MP, 0, PDT_DISK_ZBC, 12, 5, 1, 0,
         "Disable read ahead", NULL},
-    {"SYNC_PROG", CACHING_MP, 0, PDT_DISK, 12, 2, 2, 0, /* sbc3r33 */
+    {"SYNC_PROG", CACHING_MP, 0, PDT_DISK_ZBC, 12, 2, 2, 0, /* sbc3r33 */
         "Synchronous cache progress indication",
         "0: no pollable sense data during sync\t"
         "1: allow pollable sense data, allow all commands during sync\t"
         "2: allow pollable sense data, allow some commands during sync"},
-    {"NV_DIS", CACHING_MP, 0, PDT_DISK, 12, 0, 1, 0,
+    {"NV_DIS", CACHING_MP, 0, PDT_DISK_ZBC, 12, 0, 1, 0,
         "Non-volatile cache disable", NULL},
-    {"NCS", CACHING_MP, 0, PDT_DISK, 13, 7, 8, 0,
+    {"NCS", CACHING_MP, 0, PDT_DISK_ZBC, 13, 7, 8, 0,
         "Number of cache segments", NULL},
-    {"CSS", CACHING_MP, 0, PDT_DISK, 14, 7, 16, 0,
+    {"CSS", CACHING_MP, 0, PDT_DISK_ZBC, 14, 7, 16, 0,
         "Cache segment size", NULL},
 
     /* Control mode page [0xa] spc3 */
@@ -592,6 +640,8 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "Queue error management",
         "0: only affected task gets CC; 1: affected tasks aborted\t"
         "3: affected tasks aborted on same I_T nexus"},
+    {"VS_CTL", CONTROL_MP, 0, -1, 4, 7, 1, 0,
+        "Vendor specific [byte 4, bit 7]", NULL},
     {"RAC", CONTROL_MP, 0, -1, 4, 6, 1, 0,
         "Report a check", NULL},
     {"UA_INTLCK", CONTROL_MP, 0, -1, 4, 5, 2, 0,
@@ -638,26 +688,31 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"IALUAE", CONTROL_MP, MSP_SPC_CE, -1, 4, 0, 1, 0,
         "Implicit asymmetric logical unit access enabled", NULL},
     {"INIT_PR", CONTROL_MP, MSP_SPC_CE, -1, 5, 3, 4, 0,
-        "Initial command priority", "0: none or vendor\t"
-        "1: highest\t15: lowest"},
+        "Initial command priority", "0: none or vendor; 1: highest; "
+        "15: lowest"},
     {"MSDL", CONTROL_MP, MSP_SPC_CE, -1, 6, 7, 8, 0,  /* spc4r34 */
         "Maximum sense data length", "0: unlimited"},
+    {"NSQCC", CONTROL_MP, MSP_SPC_CE, -1, 7, 7, 8, 0, /* spc6r05 */
+        "Non-sequestered command count", NULL},
+    {"SQCO", CONTROL_MP, MSP_SPC_CE, -1, 8, 7, 8, 0,  /* spc6r05 */
+        "Sequestered command order",
+        "0: oldest\t1: best IOPS\t2: IOPS and other sources"},
 
-    /* Application tag mode subpage [0xa,0x2] sbc4 */
+    /* Application tag mode subpage: atag [0xa,0x2] sbc3r25 */
     /* descriptor starts here, <start_byte> is relative to start of mode
-     * page (i.e. 16 more than shown in descriptor format table) */
-    {"AT_LAST", CONTROL_MP, MSP_SBC_APP_TAG, PDT_DISK, 16, 7, 1, 0,
+     * page (i.e. 16 more than shown in t10's descriptor format table) */
+    {"AT_LAST", CONTROL_MP, MSP_SBC_APP_TAG, PDT_DISK_ZBC, 16, 7, 1, 0,
         "Last", NULL},
-    {"AT_LBAT", CONTROL_MP, MSP_SBC_APP_TAG, PDT_DISK, 22, 7, 16, MF_HEX,
+    {"AT_LBAT", CONTROL_MP, MSP_SBC_APP_TAG, PDT_DISK_ZBC, 22, 7, 16, MF_HEX,
         "Logical block application tag", NULL},
-    {"AT_LBA", CONTROL_MP, MSP_SBC_APP_TAG, PDT_DISK, 24, 7, 64, MF_HEX,
-        "Logical block address", NULL},
-    {"AT_COUNT", CONTROL_MP, MSP_SBC_APP_TAG, PDT_DISK, 32, 7, 64, MF_HEX,
-        "Logical block count", NULL},
+    {"AT_LBA", CONTROL_MP, MSP_SBC_APP_TAG, PDT_DISK_ZBC, 24, 7, 64, MF_HEX,
+        "Logical block address", "start LBA for this application tag"},
+    {"AT_COUNT", CONTROL_MP, MSP_SBC_APP_TAG, PDT_DISK_ZBC, 32, 7, 64,
+     MF_HEX | MF_ALL_1S, "Logical block count", NULL},
 
-    /* Command duration limit A mode subpage [0xa,0x3] spc5 */
+    /* Command duration limit A mode subpage: cdla [0xa,0x3] spc5 */
     /* descriptor starts here, <start_byte> is relative to start of mode
-     * page (i.e. 8 more than shown in descriptor format table) */
+     * page (i.e. 8 more than shown in t10's descriptor format table) */
     {"CDA_UNIT", CONTROL_MP, MSP_SPC_CDLA, -1, 8, 7, 3, 0,
         "CDLA unit",
         "0: no duration limit\t"
@@ -667,9 +722,9 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"CDA_LIMIT", CONTROL_MP, MSP_SPC_CDLA, -1, 10, 7, 16, 0,
         "Command duration limit", NULL},
 
-    /* Command duration limit B mode subpage [0xa,0x4] spc5 */
+    /* Command duration limit B mode subpage: cdlb [0xa,0x4] spc5 */
     /* descriptor starts here, <start_byte> is relative to start of mode
-     * page (i.e. 8 more than shown in descriptor format table) */
+     * page (i.e. 8 more than shown in t10's descriptor format table) */
     {"CDB_UNIT", CONTROL_MP, MSP_SPC_CDLB, -1, 8, 7, 3, 0,
         "CDL unit",
         "0: no duration limit\t"
@@ -679,9 +734,9 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"CDB_LIMIT", CONTROL_MP, MSP_SPC_CDLB, -1, 10, 7, 16, 0,
         "Command duration limit", NULL},
 
-    /* IO advice hints grouping mode subpage [0xa,0x5] sbc4 */
+    /* IO advice hints grouping mode subpage: ioad [0xa,0x5] sbc4 */
     /* descriptor starts here, <start_byte> is relative to start of mode
-     * page (i.e. 16 more than shown in descriptor format table) */
+     * page (i.e. 16 more than shown in t10's descriptor format table) */
     {"IOA_MODE", CONTROL_MP, MSP_SBC_IO_ADVI, -1, 16, 7, 2, 0,
         "IO advice hints mode", "0: valid; 1: invalid"},
     {"CS_EN", CONTROL_MP, MSP_SBC_IO_ADVI, -1, 16, 1, 1, 0,
@@ -692,6 +747,10 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
      * patterns) */
     {"ACDLU", CONTROL_MP, MSP_SBC_IO_ADVI, -1, 20, 7, 1, 0,
         "Access continue during low utilization", NULL},
+    {"RLBSR", CONTROL_MP, MSP_SBC_IO_ADVI, -1, 20, 5, 2, 0,
+        "Related logical blocks and subsequent reads",
+     "0: no information; 1: LBs associated, no subsequent reads expected;\t"
+     "3: LBs associated, subsequent reads expected"},
     {"LBM_DT", CONTROL_MP, MSP_SBC_IO_ADVI, -1, 20, 3, 4, 0,
         "LBM descriptor type", "0: access patterns; else trouble"},
     {"OV_FR", CONTROL_MP, MSP_SBC_IO_ADVI, -1, 21, 7, 2, 0,
@@ -714,13 +773,100 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "Operating System Initialization (OSI) proximity",
         "0: unknown; 1: improbable; 2: probable"},
 
-    /* Background operation control mode subpage [0xa,0x6] sbc4 */
+    /* Background operation control mode subpage: bop [0xa,0x6] sbc4 */
     {"BO_MODE", CONTROL_MP, MSP_SBC_BACK_OP, PDT_DISK, 4, 7, 2, 0,
-        "Background operation mode", "0: advance background ops "
-        "suspended during IO\t"
-        "1: host initiated background operations continue during IO"},
+        "Background operation mode", "host initiated advanced background "
+        "operations:\t"
+        "0: suspended during IO\t"
+        "1: continue during IO"},
 
-    /* Control data protection mode subpage [0xa,0xf0] ssc4 */
+    /* Command duration limit T2A mode subpage: cdt2a [0xa,0x7] spc6 */
+    {"PVCDG", CONTROL_MP, MSP_SPC_CDLT2A, -1, 7, 7, 4, 0,
+        "Perf versus command duration guidelines",
+        "Maximium percentage increase in average command completion times:\t"
+        "0: 0%\t1: 0.5%\t...\t6: 3%\t7: 4%\t8: 5%\t9: 8%\t10: 10%"
+        "11: 15%\t12: 20%"},
+    /* descriptor starts here, <start_byte> is relative to start of mode
+     * page (i.e. 8 more than shown in t10's descriptor format table) */
+    {"T2CDLU", CONTROL_MP, MSP_SPC_CDLT2A, -1, 8, 3, 4, MF_CLASH_OK,
+        "T2 command duration limit units", "0: none\t6: 500 nanoseconds\t"
+        "8: 1 microsecond\t10: 10 milliseconds\t14: 500 milliseconds"},
+    {"MXINATI", CONTROL_MP, MSP_SPC_CDLT2A, -1, 10, 7, 16, MF_CLASH_OK,
+        "Max inactive time", NULL},
+    {"MXACTTI", CONTROL_MP, MSP_SPC_CDLT2A, -1, 12, 7, 16, MF_CLASH_OK,
+        "Max active time", NULL},
+    {"MXINATP", CONTROL_MP, MSP_SPC_CDLT2A, -1, 14, 7, 4, MF_CLASH_OK,
+        "Max inactive time policy", "0: asap\t"
+        "13: good, completed, data currently unavailable\t"
+        "15: terminate, aborted command, command timeout before processing"},
+    {"MXACTTP", CONTROL_MP, MSP_SPC_CDLT2A, -1, 14, 3, 4, MF_CLASH_OK,
+        "Max active time policy", "0: asap\t"
+        "13: good, completed, data currently unavailable\t"
+        "14: as per 15, may report largest LBA processed"
+        "15: terminate, aborted command, command timeout before processing"},
+    {"CDGUID", CONTROL_MP, MSP_SPC_CDLT2A, -1, 18, 7, 16, MF_CLASH_OK,
+        "Command duration guideline",
+        "0: ignore\t>0: preferred command duration"},
+    {"CDGUPOL", CONTROL_MP, MSP_SPC_CDLT2A, -1, 22, 7, 16, MF_CLASH_OK,
+        "Command duration guideline policy", "0: asap\t"
+        "1: next highest CDL descriptor\t"
+        "2: continue as if no CDL\t"
+        "13: good, completed, data currently unavailable\t"
+        "15: terminate, aborted command, command timeout before processing"},
+    {"BYP_SEQ", CONTROL_MP, MSP_SPC_CDLT2A, -1, 23, 0, 1, MF_CLASH_OK,
+        "Bypass sequestration", NULL},
+
+    /* Command duration limit T2B mode subpage: cdt2b [0xa,0x8] spc6 */
+    {"PVLC", CONTROL_MP, MSP_SPC_CDLT2B, -1, 7, 3, 4, 0,
+        "Perf versus latency control",
+        "This field is not defined in SPC6r05??\t"
+        "Maximium percentage increase in average command completion times:\t"
+        "0: 0%\t1: 0.5%\t...\t6: 3%\t7: 4%\t8: 5%\t9: 8%\t10: 10%"
+        "11: 15%\t12: 20%"},
+    /* descriptor starts here, <start_byte> is relative to start of mode
+     * page (i.e. 8 more than shown in t10's descriptor format table) */
+    {"T2CDLU", CONTROL_MP, MSP_SPC_CDLT2B, -1, 8, 3, 4, MF_CLASH_OK,
+        "T2 command duration limit units", "0: none\t6: 500 nanoseconds\t"
+        "8: 1 microsecond\t10: 10 milliseconds\t14: 500 milliseconds"},
+    {"MXINATI", CONTROL_MP, MSP_SPC_CDLT2B, -1, 10, 7, 16, MF_CLASH_OK,
+        "Max inactive time", NULL},
+    {"MXACTTI", CONTROL_MP, MSP_SPC_CDLT2B, -1, 12, 7, 16, MF_CLASH_OK,
+        "Max active time", NULL},
+    {"MXINATP", CONTROL_MP, MSP_SPC_CDLT2B, -1, 14, 7, 4, MF_CLASH_OK,
+        "Max inactive time policy", "0: asap\t"
+        "13: good, completed, data currently unavailable\t"
+        "15: terminate, aborted command, command timeout before processing"},
+    {"MXACTTP", CONTROL_MP, MSP_SPC_CDLT2B, -1, 14, 3, 4, MF_CLASH_OK,
+        "Max active time policy", "0: asap\t"
+        "13: good, completed, data currently unavailable\t"
+        "14: as per 15, may report largest LBA processed"
+        "15: terminate, aborted command, command timeout before processing"},
+    {"CDGUID", CONTROL_MP, MSP_SPC_CDLT2B, -1, 18, 7, 16, MF_CLASH_OK,
+        "Command duration guideline",
+        "0: ignore\t>0: preferred command duration"},
+    {"CDGUPOL", CONTROL_MP, MSP_SPC_CDLT2B, -1, 22, 7, 16, MF_CLASH_OK,
+        "Command duration guideline policy", "0: asap\t"
+        "1: next highest CDL descriptor\t"
+        "2: continue as if no CDL\t"
+        "13: good, completed, data currently unavailable\t"
+        "15: terminate, aborted command, command timeout before processing"},
+    {"BYP_SEQ", CONTROL_MP, MSP_SPC_CDLT2B, -1, 23, 0, 1, MF_CLASH_OK,
+        "Bypass sequestration", NULL},
+
+    /* Zoned Block device Control mode subpage: zbcc [0xa,0x9] zbc2r04a */
+    /* Probably only applies to host-managed ZBC (pdt=0x14) but set pdt=-1
+     * in these entries in case it could apply to host-aware (pdt=0x0) */
+    {"URSWRZ_M", CONTROL_MP, MSP_ZB_D_CTL, PDT_DISK_ZBC, 4, 0, 1, 0,
+        "Unrestricted read in sequential write required management",
+        "0: not configure to support reading unwritten blocks\t"
+        "1: configure to support reading unwritten blocks"},
+    {"U_UA_CTL", CONTROL_MP, MSP_ZB_D_CTL, PDT_DISK_ZBC, 5, 0, 1, 0,
+        "Unrestricted read in sequential write required zone unit "
+        "attention control",
+        "0: issue 'Mode parameters changed' UA when URSWRZ changed\t"
+        "1: issue 'Inquiry data has changed' UA when URSWRZ changed"},
+
+    /* Control data protection mode subpage: cdp [0xa,0xf0] ssc4 */
     {"LBPM", CONTROL_MP, MSP_SSC_CDP, PDT_TAPE, 4, 7, 8, 0,
         "Logical block protection method", "0: none\t"
         "1: Reed-Solomon CRC\t2: CRC32C (Castagnoli)\t>= 0xf0: vendor"},
@@ -733,7 +879,7 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"RBDP", CONTROL_MP, MSP_SSC_CDP, PDT_TAPE, 6, 5, 1, 0,
         "Recover buffered data protected", NULL},
 
-    /* SAT: pATA control mode subpage [0xa,0xf1] sat-r09 */
+    /* SAT: pATA control mode subpage: pat [0xa,0xf1] sat-r09 */
     /* treat as spc since could be disk or ATAPI */
     {"MWD2", CONTROL_MP, MSP_SAT_PATA, -1, 4, 6, 1, 0,
         "Multi word DMA bit 2", NULL},
@@ -760,7 +906,32 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"UDMA0", CONTROL_MP, MSP_SAT_PATA, -1, 5, 0, 1, 0,
         "Ultra DMA bit 0", NULL},
 
-    /* Power condition mode page - obsolete block-device-only version */
+    /* SAT: ATA feature control mode subpage: afc [0xa,0xf2] 20-085r4 */
+    /* treat as spc since could be disk or ATAPI */
+    {"CDL_CTRL", CONTROL_MP, MSP_SAT_AFC, -1, 4, 1, 2, 0,
+        "Command duration limits control",
+        "0: ATA 0->cdl_action, no CDL mpages supported\t"
+        "1: ATA 0->cdl_action, CDL A mpage supported, maybe CDL B\t"
+        "2: ATA 1->cdl_action, CDL T2A mpage supported, maybe CDL T2B"},
+
+    /* Notch and partition mode page [0xc] sbc2 (obsolete in sbc2r14) */
+    {"ND", NOTCH_MP, 0, PDT_DISK, 2, 7, 1, 0,
+        "Notched device", NULL},
+    {"LPN", NOTCH_MP, 0, PDT_DISK, 2, 6, 1, 0,
+        "Logical or physical notch", "0: physical; 1: logical"},
+    {"MNN", NOTCH_MP, 0, PDT_DISK, 4, 7, 16, 0,
+        "Maximum number of notches", NULL},
+    {"ANOT", NOTCH_MP, 0, PDT_DISK, 6, 7, 16, 0,
+        "Active notch", "origin 1, 0 for all"},
+    {"SBOU", NOTCH_MP, 0, PDT_DISK, 8, 7, 32, MF_HEX,
+        "Starting boundary", NULL},
+    {"EBOU", NOTCH_MP, 0, PDT_DISK, 12, 7, 32, MF_HEX,
+        "Ending boundary", NULL},
+    {"PNOT", NOTCH_MP, 0, PDT_DISK, 16, 7, 64, MF_HEX,
+        "Pages notched",
+        "bit map of mpages altered by notching\tMSb: mpage 0x3f"},
+
+    /* Power condition mode page: poo, obsolete block-device-only version */
     /*   [0xd] sbc (replacement page now at 0x1a) */
     {"IDLE-OLD", POWER_OLD_MP, 0, PDT_DISK, 3, 1, 1, 0,
         "Idle timer active", NULL},
@@ -771,7 +942,7 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"SCT-OLD", POWER_OLD_MP, 0, PDT_DISK, 8, 7, 32, 0,
         "Standby condition timer (100 ms)", NULL},
 
-    /* Data compression mode page [0xf] ssc3 */
+    /* Data compression mode page: dac [0xf] ssc3 */
     {"DCE", DATA_COMPR_MP, 0, PDT_TAPE, 2, 7, 1, MF_COMMON,
         "Data compression enable", NULL},
     {"DCC", DATA_COMPR_MP, 0, PDT_TAPE, 2, 6, 1, MF_COMMON,
@@ -787,13 +958,13 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "Decompression algorithm",
         "0: none; 1: default; 5: ALDC (2048 byte); 16: IDRC; 32: DCLZ"},
 
-    /* XOR control mode page [0x10] sbc2 << obsolete in sbc3r32>> */
+    /* XOR control mode page: xo [0x10] sbc2 << obsolete in sbc3r32>> */
     {"XORDIS", XOR_MP, 0, PDT_DISK, 2, 1, 1, 0,
         "XOR disable", NULL},
     {"MXWS", XOR_MP, 0, PDT_DISK, 4, 7, 32, 0,
         "Maximum XOR write size (blocks)", NULL},
 
-    /* Device configuration mode page [0x10] ssc3 */
+    /* Device configuration mode page: dc [0x10] ssc3 */
     {"CAF", DEV_CONF_MP, 0, PDT_TAPE, 2, 5, 1, 0,
         "Change active format", NULL},
     {"ACT_F", DEV_CONF_MP, 0, PDT_TAPE, 2, 4, 5, 0,
@@ -854,7 +1025,9 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"PRMWP", DEV_CONF_MP, 0, PDT_TAPE, 15, 0, 1, 0,
         "Permanent write protection", NULL},
 
-    /* Device configuration extension mode subpage [0x10,1 ] ssc3 */
+    /* Device configuration extension mode subpage: dce [0x10,1 ] ssc3 */
+    {"PE_UN", DEV_CONF_MP, MSP_DEV_CONF_EXT, PDT_TAPE, 4, 7, 4, 0,
+        "PEWS units", "Units: 0: MB, 1: GB, 2: TB"},
     {"TARPF", DEV_CONF_MP, MSP_DEV_CONF_EXT, PDT_TAPE, 4, 3, 1, 0,
         "TapeAlert respect parameter fields", NULL},
     {"TASER", DEV_CONF_MP, MSP_DEV_CONF_EXT, PDT_TAPE, 4, 2, 1, 0,
@@ -870,12 +1043,13 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "Short erase mode",
         "0: as per SSC-2; 1: erase has no effect; 2: record EOD indication"},
     {"PEWS", DEV_CONF_MP, MSP_DEV_CONF_EXT, PDT_TAPE, 6, 7, 16, 0,
-        "Programmable early warning size [MB]", NULL},
+        "Programmable early warning size",
+        "size units depend on PE_UN field; 0: MB, 1: GB, 2: TB"},
     {"VCELBRE", DEV_CONF_MP, MSP_DEV_CONF_EXT, PDT_TAPE, 8, 0, 1, 0,
         "Volume containing encrypted logical blocks requires encryption",
         NULL},
 
-    /* Medium partition mode page [0x11] ssc3 */
+    /* Medium partition mode page: mpa [0x11] ssc3 */
     {"MAX_AP", MED_PART_MP, 0, PDT_TAPE, 2, 7, 8, 0,
         "Maximum additional partitions", NULL},
     {"APD", MED_PART_MP, 0, PDT_TAPE, 3, 7, 8, 0,
@@ -911,25 +1085,27 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"P_SZ", MED_PART_MP, 0, PDT_TAPE, 8, 7, 16, 0,
         "Partition size", NULL},
 
-    /* Enclosure services management mode page [0x14] ses2 */
+    /* Enclosure services management mode page: esm [0x14] ses2 */
     {"ENBLTC", ES_MAN_MP, 0, PDT_SES, 5, 0, 1, MF_COMMON,
         "Enable timed completion", NULL},
     {"MTCT", ES_MAN_MP, 0, PDT_SES, 6, 7, 16, MF_COMMON,
         "Maximum task completion time (100ms)", NULL},
 
-    /* Protocol specific logical unit control mode page [0x18] spc3 */
+    /* Protocol specific logical unit control mode page: pl [0x18] spc3 */
     {"LUPID", PROT_SPEC_LU_MP, 0, -1, 2, 3, 4, 0,
         "Logical unit's (transport) protocol identifier",
         PROTO_IDENT_STR "\t"
         "[try adding '-t <transport>' to get more fields]"},
 
-    /* Protocol specific port control mode page [0x19] spc3 */
+    /* Protocol specific port control mode page: pp [0x19] spc3 */
     {"PPID", PROT_SPEC_PORT_MP, 0, -1, 2, 3, 4, 0,
         "Port's (transport) protocol identifier",
         PROTO_IDENT_STR "\t"
         "[try adding '-t <transport>' to get more fields]"},
 
-    /* Power condition mode page [0x1a] spc3 (expanded in spc4r18) */
+    /* Power condition mode page: po [0x1a] spc3 (expanded in spc4r18) */
+    /* In sdparm v1.11 changed IDLE->IDLE_A; STANDBY->STANDBY_Z; */
+    /* ICT->IACT and SCT->SZCT */
     {"PM_BG", POWER_MP, 0, -1, 2, 7, 2, 0,      /* added spc4r24 */
         "Power management, background functions, precedence",
         "0: vendor specific; 1: background function higher\t"
@@ -940,18 +1116,14 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "Idle_c timer enable", NULL},
     {"IDLE_B", POWER_MP, 0, -1, 3, 2, 1, 0,
         "Idle_b timer enable", NULL},
-    {"IDLE", POWER_MP, 0, -1, 3, 1, 1, 0,   /* IDLE_A in future ? */
-        "Idle_a timer enable",
-        "named IDLE prior to spc4r18, thence IDLE_A"},
-    {"STANDBY", POWER_MP, 0, -1, 3, 0, 1, 0, /* STANDBY_Z in future ? */
-        "Standby_z timer enable",
-        "named STANDBY prior to spc4r18, thence STANDBY_Z"},
-    {"ICT", POWER_MP, 0, -1, 4, 7, 32, 0,    /* IACT in future ? */
-        "Idle_a condition timer (100 ms)",
-        "named IDLE prior to spc4r18, thence IDLE_A"},
-    {"SCT", POWER_MP, 0, -1, 8, 7, 32, 0,    /* SZCT in future ? */
-        "Standby_z condition timer (100 ms)",
-        "named STANDBY prior to spc4r18, thence STANDBY_Z"},
+    {"IDLE_A", POWER_MP, 0, -1, 3, 1, 1, 0,
+        "Idle_a timer enable", NULL},
+    {"STANDBY_Z", POWER_MP, 0, -1, 3, 0, 1, 0,
+        "Standby_z timer enable", NULL},
+    {"IACT", POWER_MP, 0, -1, 4, 7, 32, 0,
+        "Idle_a condition timer (100 ms)", NULL},
+    {"SZCT", POWER_MP, 0, -1, 8, 7, 32, 0,
+        "Standby_z condition timer (100 ms)", NULL},
     {"IBCT", POWER_MP, 0, -1, 12, 7, 32, 0,
         "Idle_b condition timer (100 ms)", NULL},
     {"ICCT", POWER_MP, 0, -1, 16, 7, 32, 0,
@@ -960,30 +1132,31 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "Standby_y condition timer (100 ms)", NULL},
     /* The "0: restricted (SAS-2)" became obsolete in spc5r01 */
     {"CCF_IDLE", POWER_MP, 0, -1, 39, 7, 2, 0,     /* changed spc4r35 */
-        "check condition on transition from idle", /* was FIDCPC (spc4r25) */
-        "0: restricted (SAS-2); 1: disabled; 2: enabled\n"},
-    {"CCF_STAND", POWER_MP, 0, -1, 39, 5, 2, 0,        /* changed spc4r35 */
-        "check condition on transition from standby",  /* was FSBCPC */
-        "0: restricted (SAS-2); 1: disabled; 2: enabled\n"},
-    {"CCF_STOPP", POWER_MP, 0, -1, 39, 3, 2, 0,        /* changed spc4r35 */
-        "check condition on transition from stopped",  /* was FSTCPC */
-        "0: restricted (SAS-2); 1: disabled; 2: enabled\n"},
+        "check condition if from idle_c",          /* was FIDCPC (spc4r25) */
+        "0: restricted (SAS-2); 1: disabled; 2: enabled"},
+    {"CCF_STAND", POWER_MP, 0, -1, 39, 5, 2, 0,    /* changed spc4r35 */
+        "check condition if from a standby",         /* was FSBCPC */
+        "0: restricted (SAS-2); 1: disabled; 2: enabled"},
+    {"CCF_STOPP", POWER_MP, 0, -1, 39, 3, 2, 0,    /* changed spc4r35 */
+        "check condition if from stopped",         /* was FSTCPC */
+        "0: restricted (SAS-2); 1: disabled; 2: enabled"},
 
-    /* Power consumption mode page [0x1a,1] added spc4r33 */
+    /* Power consumption mode page: ps [0x1a,1] added spc4r33 */
     {"ACT_LEV", POWER_MP, MSP_SPC_PS, -1, 6, 1, 2, 0,
         "Active level",
-        "1: highest; 2: intermediate; 3: lowest"},
+        "0: per PC_ID field; 1: highest; 2: intermediate; 3: lowest"},
     {"PC_ID", POWER_MP, MSP_SPC_PS, -1, 7, 7, 8, 0,
         "Power consumption identifier",
         "references Power consumption VPD page"},
 
-    /* SAT ATA Power condition mode page [0x1a,0xf1] sat2 */
+    /* SAT ATA Power condition mode page: apo [0x1a,0xf1] sat2 */
     {"APMP", POWER_MP, MSP_SAT_POWER, -1, 5, 0, 1, 0,
         "Advanced Power Management (APM) enabled/change", NULL},
     {"APM", POWER_MP, MSP_SAT_POWER, -1, 6, 7, 8, 0,
-        "Advanced Power Management (APM) value", NULL},
+        "Advanced Power Management (APM) value",
+        "0: disable APM feature set; >0: enable"},
 
-    /* Informational exception control mode page [0x1c] spc3 */
+    /* Informational exception control mode page: ie [0x1c] sbc */
     {"PERF", IEC_MP, 0, -1, 2, 7, 1, 0,
         "Performance (impact of ie operations)",
         "0: normal (some delays); 1: abridge ie operations"},
@@ -1009,29 +1182,29 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"REPC", IEC_MP, 0, -1, 8, 7, 32, 0,
         "Report count (or Test flag number [SSC-3])", NULL},
 
-    /* Background control mode subpage [0x1c,0x1] sbc3 */
-    {"S_L_FULL", IEC_MP, MSP_BACK_CTL, PDT_DISK, 4, 2, 1, 0,
+    /* Background control mode subpage: bc [0x1c,0x1] sbc3 */
+    {"S_L_FULL", IEC_MP, MSP_BACK_CTL, PDT_DISK_ZBC, 4, 2, 1, 0,
         "Suspend on log full", NULL},
-    {"LOWIR", IEC_MP, MSP_BACK_CTL, PDT_DISK, 4, 1, 1, 0,
+    {"LOWIR", IEC_MP, MSP_BACK_CTL, PDT_DISK_ZBC, 4, 1, 1, 0,
         "Log only when intervention required", NULL},
-    {"EN_BMS", IEC_MP, MSP_BACK_CTL, PDT_DISK, 4, 0, 1, 0,
+    {"EN_BMS", IEC_MP, MSP_BACK_CTL, PDT_DISK_ZBC, 4, 0, 1, 0,
         "Enable background medium scan", NULL},
-    {"EN_PS", IEC_MP, MSP_BACK_CTL, PDT_DISK, 5, 0, 1, 0,
+    {"EN_PS", IEC_MP, MSP_BACK_CTL, PDT_DISK_ZBC, 5, 0, 1, 0,
         "Enable pre-scan", NULL},
-    {"BMS_I", IEC_MP, MSP_BACK_CTL, PDT_DISK, 6, 7, 16, 0,
+    {"BMS_I", IEC_MP, MSP_BACK_CTL, PDT_DISK_ZBC, 6, 7, 16, 0,
         "Background medium scan interval time (hour)", NULL},
-    {"BPS_TL", IEC_MP, MSP_BACK_CTL, PDT_DISK, 8, 7, 16, 0,
-        "Background pre-scan time limit (hour)", NULL},
-    {"MIN_IDLE", IEC_MP, MSP_BACK_CTL, PDT_DISK, 10, 7, 16, 0,
+    {"BPS_TL", IEC_MP, MSP_BACK_CTL, PDT_DISK_ZBC, 8, 7, 16, 0,
+        "Background pre-scan time limit (hour)", "0: no limit"},
+    {"MIN_IDLE", IEC_MP, MSP_BACK_CTL, PDT_DISK_ZBC, 10, 7, 16, 0,
         "Minumum idle time before background scan (ms)", NULL},
-    {"MAX_SUSP", IEC_MP, MSP_BACK_CTL, PDT_DISK, 12, 7, 16, 0,
+    {"MAX_SUSP", IEC_MP, MSP_BACK_CTL, PDT_DISK_ZBC, 12, 7, 16, 0,
         "Maximum time to suspend background scan (ms)", NULL},
 
-    /* Logical block provisioning mode subpage [0x1c,0x2] sbc3 */
+    /* Logical block provisioning mode subpage: lbp [0x1c,0x2] sbc3 */
     {"SITUA", IEC_MP, MSP_SBC_LB_PROV, PDT_DISK, 4, 0, 1, 0,
         "Single initiator threshold unit attention", NULL},
     /* descriptor starts here, the <start_byte> is relative to the start
-     * of the mode page (i.e. 16 more than descriptor format table) */
+     * of the mode page (i.e. 16 more than t10's descriptor format table) */
     {"LBP_EN", IEC_MP, MSP_SBC_LB_PROV, PDT_DISK, 16, 7, 1, 0,
         "Threshold enabled", NULL},
     {"LBP_TYPE", IEC_MP, MSP_SBC_LB_PROV, PDT_DISK, 16, 5, 3, 0,
@@ -1044,19 +1217,19 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"LBP_COUNT", IEC_MP, MSP_SBC_LB_PROV, PDT_DISK, 20, 7, 32, 0,
         "Threshold count", NULL},
 
-    /* Medium configuration mode page [0x1d] ssc3 */
+    /* Medium configuration mode page: mco [0x1d] ssc3 */
     {"WORMM", MED_CONF_MP, 0, PDT_TAPE, 2, 0, 1, 0,
         "Worm mode", NULL},
     {"WMLR", MED_CONF_MP, 0, PDT_TAPE, 4, 7, 8, 0,
-        "Worm volume label restrictions",	/* mode->volume renaming */
+        "Worm volume label restrictions",       /* mode->volume renaming */
         "0: disallow overwrite\t1: disallow some format labels overwrite\t"
         "2: allow all format labels to be overwritten"},
     {"WMFR", MED_CONF_MP, 0, PDT_TAPE, 5, 7, 8, 0,
-        "Worm volume filemark restrictions",	/* mode->volume renaming */
+        "Worm volume filemark restrictions",    /* mode->volume renaming */
         "2: allow filemarks before EOD except closest to BOP\t"
         "3: allow any number of filemarks before EOD"},
 
-    /* Timeout and protect mode page [0x1d] mmc5 */
+    /* Timeout and protect mode page: tp [0x1d] mmc5 */
     {"G3E", TIMEOUT_PROT_MP, 0, PDT_MMC, 4, 3, 1, 0,
         "Group 3 timeout capability enable", NULL},
     {"TMOE", TIMEOUT_PROT_MP, 0, PDT_MMC, 4, 2, 1, 0,
@@ -1071,7 +1244,7 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "Group 2 minimum timeout (sec)", NULL},
 
 
-    /* Element address assignment mode page [0x1d] smc2 */
+    /* Element address assignment mode page: eaa [0x1d] smc2 */
     {"FMTEA", ELE_ADDR_ASS_MP, 0, PDT_MCHANGER, 2, 7, 16, 0,
         "First medium transport element address", NULL},
     {"NMTE", ELE_ADDR_ASS_MP, 0, PDT_MCHANGER, 4, 7, 16, 0,
@@ -1089,15 +1262,16 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"NDTE", ELE_ADDR_ASS_MP, 0, PDT_MCHANGER, 16, 7, 16, 0,
         "Number of data transfer elements", NULL},
 
-    /* Transport geometry parameters mode page [0x1e] smc2 */
+    /* Transport geometry parameters mode page: tgp [0x1e] smc2 */
     /* transport geometry descriptor starts here, <start_byte> is relative
-     * to start of mode page (i.e. 2 more than shown in descriptor table */
+     * to start of mode page (i.e. 2 more than shown in t10's descriptor
+     * table */
     {"ROTAT", TRANS_GEO_PAR_MP, 0, PDT_MCHANGER, 2, 0, 1, 0,
         "Rotation for double sided media handling", NULL},
     {"MNTES", TRANS_GEO_PAR_MP, 0, PDT_MCHANGER, 3, 7, 8, 0,
         "Member number in transport element set", NULL},
 
-    /* Device capabilities mode page [0x1f] smc3 */
+    /* Device capabilities mode page: dca [0x1f] smc3 */
     {"STORDT", DEV_CAP_MP, 0, PDT_MCHANGER, 2, 3, 1, 0,
         "Storage for data transfer element", NULL},
     {"STORIE", DEV_CAP_MP, 0, PDT_MCHANGER, 2, 2, 1, 0,
@@ -1193,7 +1367,7 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"DTEMT", DEV_CAP_MP, 0, PDT_MCHANGER, 15, 0, 1, 0,
         "Data transfer -> medium transport; Exchange Medium", NULL},
 
-    /* Extended device capabilities mode page [0x1f,0x41] smc3 */
+    /* Extended device capabilities mode page: edc [0x1f,0x41] smc3 */
     {"MVPRV", DEV_CAP_MP, MSP_EXT_DEV_CAP, PDT_MCHANGER, 4, 5, 1, 0,
         "Move prevented to import/export element", NULL},
     {"MVCL", DEV_CAP_MP, MSP_EXT_DEV_CAP, PDT_MCHANGER, 4, 4, 1, 0,
@@ -1231,7 +1405,7 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
     {"UCST", DEV_CAP_MP, MSP_EXT_DEV_CAP, PDT_MCHANGER, 8, 0, 1, 0,
         "Unassigned cleaning storage", NULL},
 
-    /* CD/DVD (MM) capabilities and mechanical status mode page */
+    /* CD/DVD (MM) capabilities and mechanical status mode page: cms */
     /* [0x2a] obsolete in mmc4 and mmc5, last valid in mmc3 */
     /* MRSS field was already obsolete in mmc3 */
     {"D_RAM_R", MMCMS_MP, 0, PDT_MMC, 2, 5, 1, 0,
@@ -1338,58 +1512,60 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
 /* << Transport protocol specific mode page items follow >> */
 
 static struct sdparm_mode_page_item sdparm_mitem_fcp_arr[] = {
-    /* disconnect-reconnect mode page [0x2] fcp3 */
-    {"BFR", DISCONNECT_MP, 0, -1, 2, 7, 8, 0,
+    /* disconnect-reconnect mode page [0x2] fcp3-5 */
+    {"BFR", DISCONNECT_MP, 0, -1, 2, 7, 8, 0,   /* obs fcp-5 */
         "Buffer full ratio", NULL},
-    {"BER", DISCONNECT_MP, 0, -1, 3, 7, 8, 0,
+    {"BER", DISCONNECT_MP, 0, -1, 3, 7, 8, 0,   /* obs fcp-5 */
         "Buffer empty ratio", NULL},
-    {"BIL", DISCONNECT_MP, 0, -1, 4, 7, 16, MF_COMMON,
+    {"BIL", DISCONNECT_MP, 0, -1, 4, 7, 16, MF_COMMON,  /* obs fcp-5 */
         "Bus inactivity limit (transmission words)", NULL},
-    {"DTL", DISCONNECT_MP, 0, -1, 6, 7, 16, MF_COMMON,
+    {"DTL", DISCONNECT_MP, 0, -1, 6, 7, 16, MF_COMMON,  /* obs fcp-5 */
         "Disconnect time limit (128 transmission words)", NULL},
-    {"CTL", DISCONNECT_MP, 0, -1, 8, 7, 16, MF_COMMON,
+    {"CTL", DISCONNECT_MP, 0, -1, 8, 7, 16, MF_COMMON,  /* obs fcp-5 */
         "Connect time limit (128 transmission words)", NULL},
     {"MBS", DISCONNECT_MP, 0, -1, 10, 7, 16, MF_COMMON | MF_CLASH_OK,
         "Maximum burst size (512 bytes)", NULL},
     {"EMDP", DISCONNECT_MP, 0, -1, 12, 7, 1, MF_CLASH_OK,
         "Enable modify data pointers", NULL},
-    {"FAA", DISCONNECT_MP, 0, -1, 12, 6, 1, 0,
+    {"FAA", DISCONNECT_MP, 0, -1, 12, 6, 1, 0,  /* obs fcp-5 */
         "Fairness access A [FCP_DATA]", NULL},
-    {"FAB", DISCONNECT_MP, 0, -1, 12, 5, 1, 0,
+    {"FAB", DISCONNECT_MP, 0, -1, 12, 5, 1, 0,  /* obs fcp-5 */
         "Fairness access B [FCP_XFER]", NULL},
-    {"FAC", DISCONNECT_MP, 0, -1, 12, 4, 1, 0,
+    {"FAC", DISCONNECT_MP, 0, -1, 12, 4, 1, 0,  /* obs fcp-5 */
         "Fairness access C [FCP_RSP]", NULL},
     {"FBS", DISCONNECT_MP, 0, -1, 14, 7, 16, MF_CLASH_OK,
-        "First burst size (512 bytes)", NULL},
+        "First burst size (512 bytes)", "0: no limit"},
 
-    /* protocol specific logical unit mode page [0x18] fcp3 */
+    /* protocol specific logical unit mode page [0x18] fcp3-5 */
     {"LUPID", PROT_SPEC_LU_MP, 0, -1, 2, 3, 4, MF_COMMON | MF_CLASH_OK,
         "Logical unit's (transport) protocol identifier",
         PROTO_IDENT_STR },
     {"EPDC", PROT_SPEC_LU_MP, 0, -1, 3, 0, 1, MF_COMMON,
         "Enable precise delivery checking", NULL},
 
-    /* protocol specific port control page [0x19] fcp3 */
+    /* protocol specific port control page [0x19] fcp3-5 */
     {"PPID", PROT_SPEC_PORT_MP, 0, -1, 2, 3, 4, MF_COMMON | MF_CLASH_OK,
         "Port's (transport) protocol identifier",
         PROTO_IDENT_STR },
-    {"DTFD", PROT_SPEC_PORT_MP, 0, -1, 3, 7, 1, MF_COMMON,
+    {"DTFD", PROT_SPEC_PORT_MP, 0, -1, 3, 7, 1, MF_COMMON,  /* obs fcp-5 */
         "Disable target fabric discovery", NULL},
-    {"PLPB", PROT_SPEC_PORT_MP, 0, -1, 3, 6, 1, MF_COMMON,
+    {"PLPB", PROT_SPEC_PORT_MP, 0, -1, 3, 6, 1, MF_COMMON,  /* obs fcp-5 */
         "Prevent loop port bypass", NULL},
-    {"DDIS", PROT_SPEC_PORT_MP, 0, -1, 3, 5, 1, 0,
+    {"DDIS", PROT_SPEC_PORT_MP, 0, -1, 3, 5, 1, 0,      /* obs fcp-5 */
         "Disable discovery", NULL},
-    {"DLM", PROT_SPEC_PORT_MP, 0, -1, 3, 4, 1, 0,
+    {"DLM", PROT_SPEC_PORT_MP, 0, -1, 3, 4, 1, 0,       /* obs fcp-5 */
         "Disable loop master", NULL},
-    {"RHA", PROT_SPEC_PORT_MP, 0, -1, 3, 3, 1, 0,
+    {"RHA", PROT_SPEC_PORT_MP, 0, -1, 3, 3, 1, 0,       /* obs fcp-5 */
         "Require hard address", NULL},
-    {"ALWI", PROT_SPEC_PORT_MP, 0, -1, 3, 2, 1, 0,
+    {"ALWI", PROT_SPEC_PORT_MP, 0, -1, 3, 2, 1, 0,      /* obs fcp-5 */
         "Allow login without loop initialization", NULL},
-    {"DTIPE", PROT_SPEC_PORT_MP, 0, -1, 3, 1, 1, 0,
+    {"DTIPE", PROT_SPEC_PORT_MP, 0, -1, 3, 1, 1, 0,     /* obs fcp-5 */
         "Disable target initialized port enable", NULL},
-    {"DTOLI", PROT_SPEC_PORT_MP, 0, -1, 3, 0, 1, 0,
+    {"DTOLI", PROT_SPEC_PORT_MP, 0, -1, 3, 0, 1, 0,     /* obs fcp-5 */
         "Disable target originated loop initialization", NULL},
-    {"RRTVU", PROT_SPEC_PORT_MP, 0, -1, 6, 2, 3, 0,
+    {"RRTVU", PROT_SPEC_PORT_MP, 0, -1, 6, 2, 3, MF_CLASH_OK,
+        "Resource recovery timeout value unit", NULL},
+    {"RR_TOV", PROT_SPEC_PORT_MP, 0, -1, 6, 2, 3, MF_CLASH_OK,
         "Resource recovery timeout value unit", NULL},
     {"SIRRTV", PROT_SPEC_PORT_MP, 0, -1, 7, 7, 8, 0,
         "Sequence initiative resource recovery timeout value", NULL},
@@ -1540,6 +1716,7 @@ static struct sdparm_mode_page_item sdparm_mitem_spi_arr[] = {
     {NULL, 0, 0, 0, 0, 0, 0, 0, NULL, NULL},
 };
 
+/* SRP == SCSI RDMA protocol */
 static struct sdparm_mode_page_item sdparm_mitem_srp_arr[] = {
     /* disconnect-reconnect mode page [0x2] srp */
     {"MBS", DISCONNECT_MP, 0, -1, 10, 7, 16, MF_COMMON | MF_CLASH_OK,
@@ -1552,15 +1729,16 @@ static struct sdparm_mode_page_item sdparm_mitem_srp_arr[] = {
     {NULL, 0, 0, 0, 0, 0, 0, 0, NULL, NULL},
 };
 
+/* SAS == Serial Attached SCSI */
 static struct sdparm_mode_page_item sdparm_mitem_sas_arr[] = {
     /* disconnect-reconnect mode page [0x2] sas/spl */
     /* spl3r6 dropped the "time" from the name of BITL, keep acronym */
     {"BITL", DISCONNECT_MP, 0, -1, 4, 7, 16, MF_COMMON,
-        "Bus inactivity (time) limit (100us)",
+        "Bus inactivity (time) limit (100us or see BILUNIT)",
         "0: no bus inactivity time limit\t"
         "1-65535: limit in units of 100 us"},
     {"MCTL", DISCONNECT_MP, 0, -1, 8, 7, 16, MF_COMMON,
-        "Connect time limit (100us)",
+        "Connect time limit (100us or see CTLUNIT)",
         "0: no maximum connection time limit\t"
         "1-65535: limit in units of 100 us"},
     {"MBS", DISCONNECT_MP, 0, -1, 10, 7, 16, MF_COMMON | MF_CLASH_OK,
@@ -1569,7 +1747,15 @@ static struct sdparm_mode_page_item sdparm_mitem_sas_arr[] = {
         "1-65535: limit in units of 512 bytes\t"
         "Ignored by persistent connections"},
         /* obsoleted spl3r2, re-instated spl3r3 */
-    {"FBS", DISCONNECT_MP, 0, -1, 14, 7, 16, MF_CLASH_OK,
+    {"CTLUNIT", DISCONNECT_MP, 0, -1, 13, 3, 2, MF_CLASH_OK,
+        "Connect time limit unit",
+        "0: 100 microsecond unit\t"
+        "1: 1 microsecond unit\t"},
+    {"BILUNIT", DISCONNECT_MP, 0, -1, 13, 1, 2, MF_CLASH_OK,    /* 21-021r3 */
+        "Bus inactivity (time) limit unit",
+        "0: 100 microsecond unit\t"
+        "1: 1 microsecond unit\t"},
+    {"FBS", DISCONNECT_MP, 0, -1, 14, 7, 16, MF_CLASH_OK,       /* 21-021r3 */
         "First burst size (512 bytes)",
         "0: no first burst size (no data-out before xfer_ready)\t"
         "1-65535: maximum first burst size in units of 512 bytes"},
@@ -1578,7 +1764,7 @@ static struct sdparm_mode_page_item sdparm_mitem_sas_arr[] = {
     {"LUPID", PROT_SPEC_LU_MP, 0, -1, 2, 3, 4, MF_COMMON | MF_CLASH_OK,
         "Logical unit's (transport) protocol identifier",
         PROTO_IDENT_STR },
-    {"TLR", PROT_SPEC_LU_MP, 0, -1, 2, 4, 1, 0,
+    {"TLR", PROT_SPEC_LU_MP, 0, -1, 2, 4, 1, MF_COMMON,
         "Transport layer retries", "0: disabled; 1: enabled (on target)"},
 
     /* protocol specific port mode page [0x19] sas/spl */
@@ -1616,7 +1802,7 @@ static struct sdparm_mode_page_item sdparm_mitem_sas_arr[] = {
     {"NOP", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 7, 7, 8, MF_COMMON,
         "Number of phys", "one descriptor per phy"},
     /* Phy mode descriptor starts here, <start_byte> relative to start of
-     * mode page (i.e. 8 more than phy mode descriptor table) */
+     * mode page (i.e. 8 more than t10's phy mode descriptor table) */
     {"PHID", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 9, 7, 8, 0,
         "Phy identifier", NULL},
     {"ADT", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 12, 6, 3, 0,
@@ -1655,6 +1841,8 @@ static struct sdparm_mode_page_item sdparm_mitem_sas_arr[] = {
          MF_HEX | MF_COMMON, "Attached SAS address", NULL},
     {"APHID", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 32, 7, 8, 0,
         "Attached phy identifier", NULL},
+    {"APERCAP", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 33, 7, 1, 0,
+        "Attached persistent capable", NULL},
     {"APOWCAP", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 33, 6, 2, 0,
         "Attached power capable", "0: not; 1: can consume; 2: can source"},
     {"ASLCAP", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 33, 4, 1, 0,
@@ -1664,9 +1852,15 @@ static struct sdparm_mode_page_item sdparm_mitem_sas_arr[] = {
     {"AIZPER", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 33, 2, 1, 0,
         "Attached inside ZPSDS persistent", NULL},
     {"AREQIZ", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 33, 1, 1, 0,
-        "Attached request inside ZPSDS", NULL},
+        "Attached requested inside ZPSDS", NULL},
     {"ABRCAP", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 33, 0, 1, 0,
         "Attached break reply capable", NULL},
+    {"AAPTACAP", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 34, 2, 1, 0,
+        "Attached APTA capable", NULL},
+    {"ASMPPCAP", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 34, 1, 1, 0,
+        "Attached SMP priority capable", NULL},
+    {"APOWDCAP", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 34, 0, 1, 0,
+        "Attached power disable capable", NULL},
     {"PMILR", PROT_SPEC_PORT_MP, MSP_SAS_PCD, -1, 40, 7, 4, 0,
         "Programmed minimum link rate",
         "0: not programmed; 8: 1.5 Gbps; 9: 3 Gbps; 10: 6 Gbps; 11: 12 Gbps\t"
@@ -1690,6 +1884,18 @@ static struct sdparm_mode_page_item sdparm_mitem_sas_arr[] = {
         "Power loss timeout(ms)", NULL},
     {"PGRATO", PROT_SPEC_PORT_MP, MSP_SAS_SPC, -1, 9, 7, 8, 0,
         "Power grant timeout(sec)", NULL},
+    {"4PHYS", PROT_SPEC_PORT_MP, MSP_SAS_SPC, -1, 10, 2, 1, 0,
+        "4 phy wide port(s) when set", "If more than 4 phys, group adjacent "
+        "(by phy id) phys"},     /* start of spl5r07 addition */
+    {"2PHYS", PROT_SPEC_PORT_MP, MSP_SAS_SPC, -1, 10, 1, 1, 0,
+        "2 phy wide port(s) when set", "If more than 2 phys, group adjacent "
+        "(by phy id) phys"},
+    {"1PHY", PROT_SPEC_PORT_MP, MSP_SAS_SPC, -1, 10, 0, 1, 0,
+        "single phy (narrow) ports", "Each phy is a SCSI port with own SAS "
+        "address"},
+    {"PMCDT", PROT_SPEC_PORT_MP, MSP_SAS_SPC, -1, 11, 7, 8, 0,
+        "port mode change delay time (unit: seconds)", "Minimum time device "
+        "remains offline after change"},    /* end of spl5r07 addition */
 
     /* SAS-2 Enhanced phy mode page [0x19,0x3] sas/spl */
     {"PPID_3", PROT_SPEC_PORT_MP, MSP_SAS_E_PHY, -1, 5, 3, 4, 0,
@@ -1700,7 +1906,7 @@ static struct sdparm_mode_page_item sdparm_mitem_sas_arr[] = {
     {"NOP_1", PROT_SPEC_PORT_MP, MSP_SAS_E_PHY, -1, 7, 7, 8, 0,
         "Number of phys", "one descriptor per phy"},
     /* Phy mode descriptor starts here, <start_byte> relative to start of
-     * mode page (i.e. 8 more than phy mode descriptor table) */
+     * mode page (i.e. 8 more than t10's phy mode descriptor table) */
     {"PHID_1", PROT_SPEC_PORT_MP, MSP_SAS_E_PHY, -1, 9, 7, 8, 0,
         "Phy identifier", NULL},
     {"PPCAP", PROT_SPEC_PORT_MP, MSP_SAS_E_PHY, -1, 12, 7, 32, MF_HEX,
@@ -1723,7 +1929,47 @@ static struct sdparm_mode_page_item sdparm_mitem_sas_arr[] = {
     {"EN_PA", PROT_SPEC_PORT_MP, MSP_SAS_E_PHY, -1, 27, 1, 1, 0,
         "Enable partial phy power condition", NULL},
     {"HMS", PROT_SPEC_PORT_MP, MSP_SAS_E_PHY, -1, 27, 0, 1, 0,
-        "Hardware muxing supported", NULL},
+        "Hardware muxing supported", NULL},     /* obsolete spl5r01 */
+
+    /* SPL-5 Out of band management control mode page [0x19,0x4] sas/spl */
+    /* SFF-8609 related: Management Interface for drive thermal conditions */
+    {"OOB_RE", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 4, 7, 1, 0,
+        "Out of band reporting enabled", "MSelect 1->0: send stopping "
+        "transmission packet\t0->1: send protocol revision code packet"},
+    {"OOB_PRV", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 6, 7, 16, MF_HEX,
+        "Out of band protocol revision code",
+        "example: SFF-8609 revison 1.2 is code 0x102"},
+    {"OOB_D_ID", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 8, 3, 4,
+        0, "Out of band descriptor identifier",
+        "0: temperature attribute; 1-15: restricted for SFF-8209"},
+    /* MF_DESC_ID_B0-3 bits are all zero for Temperature attribute */
+    {"TA_TRE", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 12, 0, 1, MF_CLASH_OK,
+        "Temperature attribute, temperature reporting enabled", NULL},
+    {"TA_RI", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 13, 7, 8, MF_CLASH_OK,
+        "Temperature attribute, reporting interval (seconds)", NULL},
+    {"TA_MRI", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 14, 7, 8, MF_CLASH_OK,
+        "Temperature attribute, minimum reporting interval (seconds)", NULL},
+    {"TA_C_UP", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 15, 7, 4, MF_CLASH_OK,
+        "Temperature attribute, change up (Celsius)", NULL},
+    {"TA_C_DO", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 15, 3, 4, MF_CLASH_OK,
+        "Temperature attribute, change down (Celsius)", NULL},
+    {"TA_TM", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 16, 1, 2, MF_CLASH_OK,
+        "Temperature attribute, test mode",
+        "0: test mode disabled, transfer actual temperature\t"
+        "1: TM enabled, send incrementing sequence of temps\t"
+        "2: TM enabled, send decrementing sequence of temps\t"
+        "3: TM enabled, send value in TA_TM_T every interval"},
+    {"TA_TM_T", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 18, 7, 8,
+        MF_CLASH_OK | MF_TWOS_COMP,
+        "Temperature attribute test mode temperature", NULL},
+#if 0
+    {"MY_TEST", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 13, 7, 8,
+        MF_CLASH_OK | MF_DESC_ID_B0,
+        "My test (dpg), 8 bit number, desc_id=1", NULL},
+    {"MY_EXTRA", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 18, 7, 8,
+        MF_CLASH_OK | MF_DESC_ID_B0,
+        "My test (dpg), 8 bit number, desc_id=1", NULL},
+#endif
 
     {NULL, 0, 0, 0, 0, 0, 0, 0, NULL, NULL},
 };
@@ -1738,14 +1984,14 @@ struct sdparm_transport_pair sdparm_transport_mp[] = {
     {NULL, NULL},
     {sdparm_sas_mode_pg, sdparm_mitem_sas_arr},
     {NULL, NULL},
-    {NULL, NULL},       /* 8 */
+    {NULL, NULL},       /* 8: ata (SAT mpages in generic) */
     {NULL, NULL},
     {NULL, NULL},
     {NULL, NULL},
     {NULL, NULL},
     {NULL, NULL},
     {NULL, NULL},
-    {NULL, NULL},       /* 15 */
+    {sdparm_gen_mode_pg, sdparm_mitem_arr}, /* 15: none, treat as generic */
 };
 
 const char * sdparm_ansi_version_arr[] =

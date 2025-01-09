@@ -1,8 +1,21 @@
-sdparm (1.10-deepin1) unstable; urgency=medium
+sdparm (1.12-2) unstable; urgency=medium
 
-  * Rebuild
+  * Bump standards version to 4.7.0.
 
- -- Deepin Packages Builder <packages@deepin.org>  Fri, 11 Nov 2022 18:05:21 +0800
+ -- Alex Myczko <tar@debian.org>  Mon, 15 Jul 2024 06:11:52 +0000
+
+sdparm (1.12-1) unstable; urgency=medium
+
+  * New upstream version. (Closes: #969102)
+  * d/control:
+    - Add myself to Uploaders.
+    - Drop cdbs and autotools-dev from Build-Depends.
+    - Add Homepage field. (Closes: #969101)
+  * Bump standards version to 4.6.1.
+  * Bump debhelper version to 13, drop d/compat.
+  * d/copyright: modernized.
+
+ -- Gürkan Myczko <tar@debian.org>  Mon, 30 May 2022 06:36:13 +0200
 
 sdparm (1.10-1) unstable; urgency=medium
 

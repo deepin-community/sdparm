@@ -2,10 +2,12 @@
 #define SG_LIB_DATA_H
 
 /*
- * Copyright (c) 2007-2016 Douglas Gilbert.
+ * Copyright (c) 2007-2019 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
  */
 
 /*
@@ -32,7 +34,8 @@ extern "C" {
 #define SG_PERSISTENT_RESERVE_IN 0x5e
 #define SG_PERSISTENT_RESERVE_OUT 0x5f
 #define SG_READ_ATTRIBUTE 0x8c
-#define SG_READ_BUFFER 0x3c
+#define SG_READ_BUFFER 0x3c     /* now READ BUFFER(10) */
+#define SG_READ_BUFFER_16 0x9b
 #define SG_READ_POSITION 0x34   /* SSC command with service actions */
 #define SG_SANITIZE 0x48
 #define SG_SERVICE_ACTION_BIDI 0x9d
@@ -47,23 +50,50 @@ extern "C" {
 
 
 
+struct sg_lib_simple_value_name_t {
+    int value;
+    const char * name;
+};
+
 struct sg_lib_value_name_t {
     int value;
     int peri_dev_type; /* 0 -> SPC and/or PDT_DISK, >0 -> PDT */
     const char * name;
 };
 
+struct sg_value_2names_t {
+    int value;
+    const char * name;
+    const char * name2;
+};
+
 struct sg_lib_asc_ascq_t {
-    unsigned char asc;          /* additional sense code */
-    unsigned char ascq;         /* additional sense code qualifier */
+    uint8_t asc;          /* additional sense code */
+    uint8_t ascq;         /* additional sense code qualifier */
     const char * text;
 };
 
 struct sg_lib_asc_ascq_range_t {
-    unsigned char asc;  /* additional sense code (ASC) */
-    unsigned char ascq_min;     /* ASCQ minimum in range */
-    unsigned char ascq_max;     /* ASCQ maximum in range */
+    uint8_t asc;          /* additional sense code (ASC) */
+    uint8_t ascq_min;     /* ASCQ minimum in range */
+    uint8_t ascq_max;     /* ASCQ maximum in range */
     const char * text;
+};
+
+/* First use: SCSI status, sense_key, asc, ascq tuple */
+struct sg_lib_4tuple_u8 {
+    uint8_t t1;
+    uint8_t t2;
+    uint8_t t3;
+    uint8_t t4;
+};
+
+struct sg_cmd_response_t {
+    int din_len;
+    int dout_len;
+    int resid;
+    int resid2;
+    const uint8_t * sbp;
 };
 
 
@@ -91,11 +121,18 @@ extern struct sg_lib_value_name_t sg_lib_read_attr_arr[];
 extern struct sg_lib_value_name_t sg_lib_read_pos_arr[];
 extern struct sg_lib_asc_ascq_range_t sg_lib_asc_ascq_range[];
 extern struct sg_lib_asc_ascq_t sg_lib_asc_ascq[];
+extern struct sg_lib_value_name_t sg_lib_scsi_feature_sets[];
 extern const char * sg_lib_sense_key_desc[];
 extern const char * sg_lib_pdt_strs[];
 extern const char * sg_lib_transport_proto_strs[];
 extern int sg_lib_pdt_decay_arr[];
 
+extern struct sg_lib_simple_value_name_t sg_lib_nvme_admin_cmd_arr[];
+extern struct sg_lib_simple_value_name_t sg_lib_nvme_nvm_cmd_arr[];
+extern struct sg_lib_value_name_t sg_lib_nvme_cmd_status_arr[];
+extern struct sg_lib_4tuple_u8 sg_lib_scsi_status_sense_arr[];
+
+extern struct sg_value_2names_t sg_exit_str_arr[];
 
 #ifdef __cplusplus
 }

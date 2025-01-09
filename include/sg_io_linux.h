@@ -2,19 +2,21 @@
 #define SG_IO_LINUX_H
 
 /*
- * Copyright (c) 2004-2015 Douglas Gilbert.
+ * Copyright (c) 2004-2020 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
  */
 
 /*
- * Version 1.04 [20151217]
+ * Version 1.08 [20201102]
  */
 
 /*
- * This header file contains linux specific information related to the SCSI
- * command pass through in the SCSI generic (sg) driver and the linux
+ * This header file contains Linux specific information related to the SCSI
+ * command pass through in the SCSI generic (sg) driver and the Linux
  * block layer.
  */
 
@@ -25,7 +27,7 @@
 extern "C" {
 #endif
 
-/* The following are 'host_status' codes */
+/* host_bytes: DID_* are Linux SCSI result (a 32 bit variable) bits 16:23 */
 #ifndef DID_OK
 #define DID_OK 0x00
 #endif
@@ -82,7 +84,7 @@ extern "C" {
 #define SG_LIB_DID_TARGET_FAILURE       DID_TARGET_FAILURE
 #define SG_LIB_DID_NEXUS_FAILURE        DID_NEXUS_FAILURE
 
-/* The following are 'driver_status' codes */
+/* DRIVER_* are Linux SCSI result (a 32 bit variable) bits 24:27 */
 #ifndef DRIVER_OK
 #define DRIVER_OK 0x00
 #endif
@@ -96,6 +98,7 @@ extern "C" {
 #define DRIVER_HARD 0x07
 #define DRIVER_SENSE 0x08       /* Sense_buffer has been set */
 
+/* SUGGEST_* are Linux SCSI result (a 32 bit variable) bits 28:31 */
 /* N.B. the SUGGEST_* codes are no longer used in Linux and are only kept
  * to stop compilation breakages.
  * Following "suggests" are "or-ed" with one of previous 8 entries */
@@ -142,41 +145,55 @@ void sg_print_host_status(int host_status);
 void sg_print_driver_status(int driver_status);
 
 /* sg_chk_n_print() returns 1 quietly if there are no errors/warnings
-   else it prints errors/warnings (prefixed by 'leadin') to
-   'sg_warnings_fd' and returns 0. raw_sinfo indicates whether the
-   raw sense buffer (in ASCII hex) should be printed. */
+ * else it prints errors/warnings (prefixed by 'leadin') to
+ * 'sg_warnings_fd' and returns 0. raw_sinfo indicates whether the
+ * raw sense buffer (in ASCII hex) should be printed. */
 int sg_chk_n_print(const char * leadin, int masked_status, int host_status,
-                   int driver_status, const unsigned char * sense_buffer,
-                   int sb_len, int raw_sinfo);
+                   int driver_status, const uint8_t * sense_buffer,
+                   int sb_len, bool raw_sinfo);
 
 /* The following function declaration is for the sg version 3 driver. */
 struct sg_io_hdr;
+
 /* sg_chk_n_print3() returns 1 quietly if there are no errors/warnings;
-   else it prints errors/warnings (prefixed by 'leadin') to
-   'sg_warnings_fd' and returns 0. */
+ * else it prints errors/warnings (prefixed by 'leadin') to
+ * 'sg_warnings_fd' and returns 0. For sg_io_v4 interface use
+ * sg_linux_sense_print() instead. */
 int sg_chk_n_print3(const char * leadin, struct sg_io_hdr * hp,
-                    int raw_sinfo);
+                    bool raw_sinfo);
+
+/* Returns 1 if no errors found and thus nothing printed; otherwise
+ * prints error/warning (prefix by 'leadin') to stderr (pr2ws) and
+ * returns 0. */
+int sg_linux_sense_print(const char * leadin, int scsi_status,
+                         int host_status, int driver_status,
+                         const uint8_t * sense_buffer, int sb_len,
+                         bool raw_sinfo);
 
 /* Calls sg_scsi_normalize_sense() after obtaining the sense buffer and
-   its length from the struct sg_io_hdr pointer. If these cannot be
-   obtained, 0 is returned. */
-int sg_normalize_sense(const struct sg_io_hdr * hp,
-                       struct sg_scsi_sense_hdr * sshp);
+ * its length from the struct sg_io_hdr pointer. If these cannot be
+ * obtained, false is returned. For sg_io_v4 interface use
+ * sg_scsi_normalize_sense() function instead [see sg_lib.h].  */
+bool sg_normalize_sense(const struct sg_io_hdr * hp,
+                        struct sg_scsi_sense_hdr * sshp);
 
+/* Returns SG_LIB_CAT_* value. */
 int sg_err_category(int masked_status, int host_status, int driver_status,
-                    const unsigned char * sense_buffer, int sb_len);
+                    const uint8_t * sense_buffer, int sb_len);
 
+/* Returns SG_LIB_CAT_* value. */
 int sg_err_category_new(int scsi_status, int host_status, int driver_status,
-                        const unsigned char * sense_buffer, int sb_len);
+                        const uint8_t * sense_buffer, int sb_len);
 
-/* The following function declaration is for the sg version 3 driver. */
+/* The following function declaration is for the sg version 3 driver. for
+ * sg_io_v4 interface use sg_err_category_new() function instead */
 int sg_err_category3(struct sg_io_hdr * hp);
 
 
 /* Note about SCSI status codes found in older versions of Linux.
-   Linux has traditionally used a 1 bit right shifted and masked
-   version of SCSI standard status codes. Now CHECK_CONDITION
-   and friends (in <scsi/scsi.h>) are deprecated. */
+ * Linux has traditionally used a 1 bit right shifted and masked
+ * version of SCSI standard status codes. Now CHECK_CONDITION
+ * and friends (in <scsi/scsi.h>) are deprecated. */
 
 #ifdef __cplusplus
 }
