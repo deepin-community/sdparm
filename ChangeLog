@@ -2,6 +2,65 @@ The version number is hardcoded into sdparm.c (in a C string);
 the rpm spec file: sdparm.spec ; the debian/changelog file;
 and the configure.ac file (in the AC_INIT item).
 
+ChangeLog for released sdparm-1.12 [20210421] [svn: r347]
+  - add Command duration limits T2A and T2B mpages
+  - add Sequestered command fields in Control extension mpage
+  - SAS/SPL disconnect-reconnect mpage: BILUNIT and CTLUNIT
+    fields added (21-021r3)
+  - vpd: SCSI Feature Sets [0x92]: add ZBC feature sets
+  - add SAT ATA Feature control mpage (20-085r4)
+  - block device char vpd page: add zoned strings
+  - expand Out of band management control mpage (spl5r08)
+  - vpd: add Format presets and Concurrent positioning
+    ranges pages
+  - vpd: standard inquiry: add hot_pluggable field
+  - sg_lib: allows access to cache mpage's WCE for nvme
+  - start using autoconf 2.70
+  - point svn:externals to sg3_utils release 1.46 (rev 891)
+
+ChangeLog for sdparm-1.11 [20200303] [svn: r334]
+  - Allow ZBC mode pages to use existing SBC mpages
+    as permitted by zbc2r04 chapter 6.4.1 table 70
+  - add --out_mask=OM option for mode page control
+    bitmask (current, changeable, default and/or saveable)
+  - add --examine option to iterate over mode+vpd pages
+  - add Out of band management control mpage (spl5r01)
+  - expand SAS configure port mode page [0x19,0x2] with
+    configure port mode fields (spl5r07)
+  - accept additional transport acronyms (e.g. ib for srp)
+  - power condition mpage: rename fields IDLE->IDLE_A;
+    STANDBY->STANDBY_Z; ICT->IACT and SCT->SZCT
+  - device configuration extension mpage: expand PEWS
+    field with added PE_UN (PEWS units) field (ssc5r05)
+  - add Zoned block device control mpage (zbc2r04a)
+  - --defaults option can be used twice: reverts all
+    pages to their defaults (new in spc5r11, RTD bit)
+  - vpd: decode TransportIDs in SCSI port page
+    - --all option used twice lists all VPD pages
+    - decode SCSI Feature sets page (spc5r16)
+    - extended inquiry data, sync with spc5r09 + sbc4r11
+    - 3 party copy page improvements including
+      Copy group identifier
+    - block limits and block limit extension VPD pages:
+      add extra info about corner cases
+    - add maximum inquiry|mode_page change logs fields
+      to extended inquiry vpd page (spc5r17)
+    - fully implement Device constituents VPD page
+  - command=capacity with --long force read capacity(16)
+    with full reporting of response
+  - --wscan option: expand bus type to include NVMe
+  - mode page output with -HHH suitable for --inhex=
+  - add flexible geometery page (obsolete) sbc2r00
+  - point svn:externals to rev 843 of sg3_utils [v 1.45]
+  - convert many two valued 'int's to bool
+  - shellcheck corrections on scripts
+  - upgrade automake to version 1.15 (U16.04)
+  - rework configure.ac and src/Makefile.am
+  - add --enable-debug to ./configure
+  - update BSD license from 3 to 2 clause aka FreeBSD
+    license (without reference to FreeBSD project)
+  - debian: bump compat file contents from 7 to 10
+
 ChangeLog for sdparm-1.10 [20160222] [svn: r279]
   - add --inhex=FN option for decoding without device present,
     FN is interpreted as response to mode sense(10) command

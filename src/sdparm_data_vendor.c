@@ -1,33 +1,35 @@
 /*
- * Copyright (c) 2007-2016 Douglas Gilbert.
+ * Copyright (c) 2005-2019, Douglas Gilbert
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <stdlib.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "sg_lib.h"
 #include "sdparm.h"
 
@@ -43,12 +45,16 @@
 
 /* Vendor specific mode pages */
 struct sdparm_vendor_name_t sdparm_vendor_id[] = {
-    {VENDOR_SEAGATE, "sea", "Seagate disk"},
+    {VENDOR_SEAGATE, "sea", "Seagate disk"},    /* 0 */
     {VENDOR_HITACHI, "hit", "Hitachi disk"},
+    {VENDOR_HITACHI, "wdc", "Hitachi disk->HGST->WDC"},
     {VENDOR_MAXTOR, "max", "Maxtor disk"},
     {VENDOR_FUJITSU, "fuj", "Fujitsu disk"},
+    {VENDOR_NONE, "none", "maps back to generic mode pages"},
     {VENDOR_LTO5, "lto5", "LTO-5 tape drive (IBM, HP)"},
     {VENDOR_LTO6, "lto6", "LTO-6 tape drive (IBM, HP)"},
+    {VENDOR_NVME, "nvme", "NVMe, SNTL in library"},
+    {VENDOR_SG, "sg", "sg3_utils package defined"},     /* 8 */
     {0, NULL, NULL},
 };
 
@@ -58,7 +64,7 @@ static struct sdparm_mode_page_t sdparm_v_seagate_mode_pg[] = {
 };
 
 static struct sdparm_mode_page_item sdparm_mitem_v_seagate_arr[] = {
-    /* Unit attention page [0x0] Seagate */
+    /* Unit attention page, ua [0x0] Seagate */
     {"PM", UNIT_ATTENTION_MP, 0, 0, 2, 7, 1, MF_COMMON,
         "Performance Mode",
         "0: adaptive cache ('server mode')\t"
@@ -120,6 +126,10 @@ static struct sdparm_mode_page_item sdparm_mitem_v_seagate_arr[] = {
         "Just in time 0, fastest seek type",
         "0: can not use this seek type in seek speed algorithm\t"
         "1: can use this seek type in seek speed algorithm"},
+    {"TTE", UNIT_ATTENTION_MP, 0, 0, 6, 0, 1, 0,
+        "Thermal throttle enable (SSD)",
+        "0: drive activity is not limited, based on temperature\t"
+        "1: drive activity is limited, based on temperature"},
 
     {NULL, 0, 0, 0, 0, 0, 0, 0, NULL, NULL},
 };
@@ -131,13 +141,19 @@ static struct sdparm_mode_page_t sdparm_v_hitachi_mode_pg[] = {
 };
 
 static struct sdparm_mode_page_item sdparm_mitem_v_hitachi_arr[] = {
-    /* Vendor unique parameters page [0x0] Hitachi */
+    /* Vendor unique parameters page, vup [0x0] Hitachi/HGST/WDC */
     {"MRG", UNIT_ATTENTION_MP, 0, 0, 2, 3, 1, 0,
         "Merge Glist into Plist (during format)", NULL},
     {"VGMDE", UNIT_ATTENTION_MP, 0, 0, 3, 6, 1, MF_COMMON,
         "Veggie mode (do random seeks when idle)", NULL},
     {"RRNDE", UNIT_ATTENTION_MP, 0, 0, 3, 1, 1, 0,
         "Report recovered non data errors (when PER set)", NULL},
+    {"DNS", UNIT_ATTENTION_MP, 0, 0, 4, 2, 1, 0,
+        "Disable notify for standby", NULL},
+    {"LRPMS", UNIT_ATTENTION_MP, 0, 0, 4, 1, 1, 0,
+        "Low RPM standby", NULL},
+    {"LCS", UNIT_ATTENTION_MP, 0, 0, 4, 0, 1, 0,
+        "Limited current startup", NULL},
     {"FDD", UNIT_ATTENTION_MP, 0, 0, 5, 4, 1, 0,
         "Format degraded disable (reporting for Test Unit Ready)", NULL},
     {"CAEN", UNIT_ATTENTION_MP, 0, 0, 5, 1, 1, MF_COMMON,
@@ -153,7 +169,7 @@ static struct sdparm_mode_page_item sdparm_mitem_v_hitachi_arr[] = {
     {"TT", UNIT_ATTENTION_MP, 0, 0, 9, 7, 8, 0,
         "Temperature threshold (celsius), 0 -> 85C", NULL},
     {"CAL", UNIT_ATTENTION_MP, 0, 0, 10, 7, 16, 0,
-        "Command aging limit (50 ms), 0 -> 85C", NULL},
+        "Command aging limit (50 ms)", NULL},
     {"RRT", UNIT_ATTENTION_MP, 0, 0, 12, 7, 8, 0,
         "Read reporting threshold for read recovered errors when PER set",
         NULL},
@@ -180,7 +196,7 @@ static struct sdparm_mode_page_t sdparm_v_maxtor_mode_pg[] = {
 };
 
 static struct sdparm_mode_page_item sdparm_mitem_v_maxtor_arr[] = {
-    /* Unit attention page [0x0] Seagate */
+    /* Unit attention page condition, uac [0x0] Maxtor */
     {"DUA", UNIT_ATTENTION_MP, 0, 0, 2, 4, 1, MF_COMMON,
         "Disable unit attention", NULL},
 
@@ -195,7 +211,7 @@ static struct sdparm_mode_page_t sdparm_v_fujitsu_mode_pg[] = {
 };
 
 static struct sdparm_mode_page_item sdparm_mitem_v_fujitsu_arr[] = {
-    /* Additional error recovery parameters page [0x21] Fujitsu */
+    /* Additional error recovery parameters page, aerp [0x21] Fujitsu */
     {"RDSE", 0x21, 0, 0, 2, 3, 4, MF_COMMON,
         "Retries during a seek error", "0: no repositioning retries"},
 
@@ -360,16 +376,35 @@ static struct sdparm_mode_page_item sdparm_mitem_v_lto6_arr[] = {
     {NULL, 0, 0, 0, 0, 0, 0, 0, NULL, NULL},
 };
 
+static struct sdparm_mode_page_t sdparm_v_nvme_mode_pg[] = {
+    {UNIT_ATTENTION_MP, 0, 0, 0, "nvme", "Unit attention (NVMe)", NULL},
+    {0, 0, 0, 0, NULL, NULL, NULL},
+};
+
+/* Only used by library's SNTL to override settings implied by NVMSR (byte
+ * 253 of Identify controller response) field, namely the NVMEE and NVMESD
+ * bits within that field */
+static struct sdparm_mode_page_item sdparm_mitem_v_nvme_arr[] = {
+    /* Unit attention page [0x0] NVMe */
+    {"ENC_OV", UNIT_ATTENTION_MP, 0, 0, 2, 7, 8, MF_COMMON,
+        "Enclosure override",
+        "0: no override; 1: SES only; 2: SES+disk\t"
+        "3: pdt=processor SAFTE; 255: disk only"},
+    {"NVME2", UNIT_ATTENTION_MP, 0, 0, 3, 7, 8, 0,
+        "Place holder, NVMe 2", NULL},
+};
+
 /* Indexed by VENDOR_* define */
 struct sdparm_vendor_pair sdparm_vendor_mp[] = {
     {sdparm_v_seagate_mode_pg, sdparm_mitem_v_seagate_arr},
     {sdparm_v_hitachi_mode_pg, sdparm_mitem_v_hitachi_arr},
     {sdparm_v_maxtor_mode_pg, sdparm_mitem_v_maxtor_arr},
     {sdparm_v_fujitsu_mode_pg, sdparm_mitem_v_fujitsu_arr},
-    {NULL, NULL},       /* hole in sequence, re-use asap */
+    {sdparm_gen_mode_pg, sdparm_mitem_arr},     /* VENDOR_NONE --> generic */
     {sdparm_v_lto5_mode_pg, sdparm_mitem_v_lto5_arr},
     {sdparm_v_lto6_mode_pg, sdparm_mitem_v_lto6_arr},
+    {sdparm_v_nvme_mode_pg, sdparm_mitem_v_nvme_arr},
+    {NULL, NULL},       /* no VENDOR_SG defined mode pages */
 };
 
-int sdparm_vendor_mp_len =
-        sizeof(sdparm_vendor_mp) / sizeof(sdparm_vendor_mp[0]);
+const int sdparm_vendor_mp_len = SG_ARRAY_SIZE(sdparm_vendor_mp);

@@ -1,13 +1,16 @@
 /*
- * Copyright (c) 1999-2015 Douglas Gilbert.
+ * Copyright (c) 1999-2020 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -18,29 +21,10 @@
 #ifdef SG_LIB_LINUX
 
 #include "sg_io_linux.h"
+#include "sg_pr2serr.h"
 
 
-/* Version 1.06 20151217 */
-
-#ifdef __GNUC__
-static int pr2ws(const char * fmt, ...)
-        __attribute__ ((format (printf, 1, 2)));
-#else
-static int pr2ws(const char * fmt, ...);
-#endif
-
-
-static int
-pr2ws(const char * fmt, ...)
-{
-    va_list args;
-    int n;
-
-    va_start(args, fmt);
-    n = vfprintf(sg_warnings_strm ? sg_warnings_strm : stderr, fmt, args);
-    va_end(args);
-    return n;
-}
+/* Version 1.11 20200401 */
 
 
 void
@@ -51,6 +35,8 @@ sg_print_masked_status(int masked_status)
     sg_print_scsi_status(scsi_status);
 }
 
+/* host_bytes: DID_* are Linux SCSI result (a 32 bit variable) bits 16:23 */
+
 static const char * linux_host_bytes[] = {
     "DID_OK", "DID_NO_CONNECT", "DID_BUS_BUSY", "DID_TIME_OUT",
     "DID_BAD_TARGET", "DID_ABORT", "DID_PARITY", "DID_ERROR",
@@ -60,37 +46,34 @@ static const char * linux_host_bytes[] = {
     "DID_ALLOC_FAILURE", "DID_MEDIUM_ERROR",
 };
 
-#define LINUX_HOST_BYTES_SZ \
-        (int)(sizeof(linux_host_bytes) / sizeof(linux_host_bytes[0]))
-
 void
 sg_print_host_status(int host_status)
 {
     pr2ws("Host_status=0x%02x ", host_status);
-    if ((host_status < 0) || (host_status >= LINUX_HOST_BYTES_SZ))
+    if ((host_status < 0) ||
+        (host_status >= (int)SG_ARRAY_SIZE(linux_host_bytes)))
         pr2ws("is invalid ");
     else
         pr2ws("[%s] ", linux_host_bytes[host_status]);
 }
 
+/* DRIVER_* are Linux SCSI result (a 32 bit variable) bits 24:27 */
+
 static const char * linux_driver_bytes[] = {
     "DRIVER_OK", "DRIVER_BUSY", "DRIVER_SOFT", "DRIVER_MEDIA",
     "DRIVER_ERROR", "DRIVER_INVALID", "DRIVER_TIMEOUT", "DRIVER_HARD",
-    "DRIVER_SENSE"
+    "DRIVER_SENSE",
 };
 
-#define LINUX_DRIVER_BYTES_SZ \
-    (int)(sizeof(linux_driver_bytes) / sizeof(linux_driver_bytes[0]))
-
 #if 0
+
+/* SUGGEST_* are Linux SCSI result (a 32 bit variable) bits 28:31 */
+
 static const char * linux_driver_suggests[] = {
     "SUGGEST_OK", "SUGGEST_RETRY", "SUGGEST_ABORT", "SUGGEST_REMAP",
     "SUGGEST_DIE", "UNKNOWN","UNKNOWN","UNKNOWN",
-    "SUGGEST_SENSE"
+    "SUGGEST_SENSE",
 };
-
-#define LINUX_DRIVER_SUGGESTS_SZ \
-    (int)(sizeof(linux_driver_suggests) / sizeof(linux_driver_suggests[0]))
 #endif
 
 
@@ -101,11 +84,11 @@ sg_print_driver_status(int driver_status)
     const char * driv_cp = "invalid";
 
     driv = driver_status & SG_LIB_DRIVER_MASK;
-    if (driv < LINUX_DRIVER_BYTES_SZ)
+    if (driv < (int)SG_ARRAY_SIZE(linux_driver_bytes))
         driv_cp = linux_driver_bytes[driv];
 #if 0
     sugg = (driver_status & SG_LIB_SUGGEST_MASK) >> 4;
-    if (sugg < LINUX_DRIVER_SUGGESTS_SZ)
+    if (sugg < (int)SG_ARRAY_SIZE(linux_driver_suggests))
         sugg_cp = linux_driver_suggests[sugg];
 #endif
     pr2ws("Driver_status=0x%02x", driver_status);
@@ -113,14 +96,15 @@ sg_print_driver_status(int driver_status)
 }
 
 /* Returns 1 if no errors found and thus nothing printed; otherwise
-   prints error/warning (prefix by 'leadin') and returns 0. */
-static int
+ * prints error/warning (prefix by 'leadin') to stderr (pr2ws) and
+ * returns 0. */
+int
 sg_linux_sense_print(const char * leadin, int scsi_status, int host_status,
-                     int driver_status, const unsigned char * sense_buffer,
-                     int sb_len, int raw_sinfo)
+                     int driver_status, const uint8_t * sense_buffer,
+                     int sb_len, bool raw_sinfo)
 {
-    int done_leadin = 0;
-    int done_sense = 0;
+    bool done_leadin = false;
+    bool done_sense = false;
 
     scsi_status &= 0x7e; /*sanity */
     if ((0 == scsi_status) && (0 == host_status) && (0 == driver_status))
@@ -128,7 +112,7 @@ sg_linux_sense_print(const char * leadin, int scsi_status, int host_status,
     if (0 != scsi_status) {
         if (leadin)
             pr2ws("%s: ", leadin);
-        done_leadin = 1;
+        done_leadin = true;
         pr2ws("SCSI status: ");
         sg_print_scsi_status(scsi_status);
         pr2ws("\n");
@@ -136,7 +120,7 @@ sg_linux_sense_print(const char * leadin, int scsi_status, int host_status,
                              (scsi_status == SAM_STAT_COMMAND_TERMINATED))) {
             /* SAM_STAT_COMMAND_TERMINATED is obsolete */
             sg_print_sense(0, sense_buffer, sb_len, raw_sinfo);
-            done_sense = 1;
+            done_sense = true;
         }
     }
     if (0 != host_status) {
@@ -145,7 +129,7 @@ sg_linux_sense_print(const char * leadin, int scsi_status, int host_status,
         if (done_leadin)
             pr2ws("plus...: ");
         else
-            done_leadin = 1;
+            done_leadin = true;
         sg_print_host_status(host_status);
         pr2ws("\n");
     }
@@ -157,8 +141,6 @@ sg_linux_sense_print(const char * leadin, int scsi_status, int host_status,
             pr2ws("%s: ", leadin);
         if (done_leadin)
             pr2ws("plus...: ");
-        else
-            done_leadin = 1;
         sg_print_driver_status(driver_status);
         pr2ws("\n");
         if (sense_buffer && (! done_sense) &&
@@ -170,7 +152,7 @@ sg_linux_sense_print(const char * leadin, int scsi_status, int host_status,
 
 #ifdef SG_IO
 
-int
+bool
 sg_normalize_sense(const struct sg_io_hdr * hp,
                    struct sg_scsi_sense_hdr * sshp)
 {
@@ -186,7 +168,7 @@ sg_normalize_sense(const struct sg_io_hdr * hp,
    returns 0. */
 int
 sg_chk_n_print3(const char * leadin, struct sg_io_hdr * hp,
-                int raw_sinfo)
+                bool raw_sinfo)
 {
     return sg_linux_sense_print(leadin, hp->status, hp->host_status,
                                 hp->driver_status, hp->sbp, hp->sb_len_wr,
@@ -198,8 +180,8 @@ sg_chk_n_print3(const char * leadin, struct sg_io_hdr * hp,
    returns 0. */
 int
 sg_chk_n_print(const char * leadin, int masked_status, int host_status,
-               int driver_status, const unsigned char * sense_buffer,
-               int sb_len, int raw_sinfo)
+               int driver_status, const uint8_t * sense_buffer,
+               int sb_len, bool raw_sinfo)
 {
     int scsi_status = (masked_status << 1) & 0x7e;
 
@@ -219,7 +201,7 @@ sg_err_category3(struct sg_io_hdr * hp)
 
 int
 sg_err_category(int masked_status, int host_status, int driver_status,
-                const unsigned char * sense_buffer, int sb_len)
+                const uint8_t * sense_buffer, int sb_len)
 {
     int scsi_status = (masked_status << 1) & 0x7e;
 
@@ -229,7 +211,7 @@ sg_err_category(int masked_status, int host_status, int driver_status,
 
 int
 sg_err_category_new(int scsi_status, int host_status, int driver_status,
-                    const unsigned char * sense_buffer, int sb_len)
+                    const uint8_t * sense_buffer, int sb_len)
 {
     int masked_driver_status = (SG_LIB_DRIVER_MASK & driver_status);
 
